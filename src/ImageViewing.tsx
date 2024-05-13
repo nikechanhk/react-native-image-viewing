@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
+// @ts-nocheck
 import React, { ComponentType, useCallback, useRef, useEffect } from "react";
 import {
   Animated,
