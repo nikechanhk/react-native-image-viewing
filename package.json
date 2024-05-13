@@ -18,7 +18,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "postversion": "yarn build"
+    "postinstall": "yarn build"
   },
   "peerDependencies": {
     "react": ">=16.11.0",
