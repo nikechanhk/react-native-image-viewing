@@ -6,9 +6,10 @@
  *
  */
 
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useRef, useState, useEffect } from "react";
 
 import {
+  View,
   Animated,
   ScrollView,
   Dimensions,
@@ -69,6 +70,12 @@ const ImageItem = ({
     [imageContainer]
   );
 
+  useEffect(() => {
+    if (imageContainer.current) {
+        imageContainer.current.scrollTo({ y: SCREEN_HEIGHT, animated: false});
+    }
+  }, [imageContainer]);
+
   const onLongPressHandler = useCallback(() => {
     onLongPress(imageSrc);
   }, [imageSrc, onLongPress]);
@@ -91,7 +98,7 @@ const ImageItem = ({
     inputRange: [-SWIPE_CLOSE_OFFSET, 0, SWIPE_CLOSE_OFFSET],
     outputRange: [0.7, 1, 0.7],
   });
-  const imageStylesWithOpacity = { ...imagesStyles, opacity: imageOpacity };
+  const imageStylesWithOpacity = { ...imagesStyles, opacity: 1 };
 
   const onScrollEndDrag = ({
     nativeEvent,
@@ -99,13 +106,11 @@ const ImageItem = ({
     const velocityY = nativeEvent?.velocity?.y ?? 0;
     const offsetY = nativeEvent?.contentOffset?.y ?? 0;
 
-    if (
-      (Math.abs(velocityY) > SWIPE_CLOSE_VELOCITY &&
-        offsetY > SWIPE_CLOSE_OFFSET) ||
-      offsetY > SCREEN_HEIGHT / 2
-    ) {
-      onRequestClose();
-    }
+    if ((Math.abs(velocityY) > SWIPE_CLOSE_VELOCITY &&
+            (offsetY > SWIPE_CLOSE_OFFSET + SCREEN_HEIGHT || offsetY < -SWIPE_CLOSE_OFFSET + SCREEN_HEIGHT)))
+             {
+            onRequestClose();
+        }
   };
 
   const onScroll = ({
@@ -114,6 +119,11 @@ const ImageItem = ({
     const offsetY = nativeEvent?.contentOffset?.y ?? 0;
 
     scrollValueY.setValue(offsetY);
+
+    if (offsetY > SCREEN_HEIGHT + SCREEN_HEIGHT / 2 ||
+        offsetY < SCREEN_HEIGHT - SCREEN_HEIGHT / 2) {
+            onRequestClose();
+        }
   };
 
   return (
@@ -131,6 +141,7 @@ const ImageItem = ({
         onScrollEndDrag,
       })}
     >
+      <View style={{ height: SCREEN_HEIGHT }} />
       <Animated.Image
         {...panHandlers}
         source={imageSrc}
@@ -148,7 +159,7 @@ const styles = StyleSheet.create({
     height: SCREEN_HEIGHT,
   },
   imageScrollContainer: {
-    height: SCREEN_HEIGHT * 2,
+    height: SCREEN_HEIGHT * 3,
   },
 });
 
