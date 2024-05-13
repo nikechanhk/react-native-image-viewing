@@ -40,6 +40,7 @@ type Props = {
   delayLongPress: number;
   swipeToCloseEnabled?: boolean;
   doubleTapToZoomEnabled?: boolean;
+  currentImageIndex: number;
 };
 
 const ImageItem = ({
@@ -50,6 +51,7 @@ const ImageItem = ({
   delayLongPress,
   swipeToCloseEnabled = true,
   doubleTapToZoomEnabled = true,
+  currentImageIndex,
 }: Props) => {
   const imageContainer = useRef<ScrollView & NativeMethodsMixin>(null);
   const imageDimensions = useImageDimensions(imageSrc);
@@ -87,6 +89,7 @@ const ImageItem = ({
     doubleTapToZoomEnabled,
     onLongPress: onLongPressHandler,
     delayLongPress,
+    currentImageIndex,
   });
 
   const imagesStyles = getImageStyles(
