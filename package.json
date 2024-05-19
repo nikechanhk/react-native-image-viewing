@@ -17,8 +17,7 @@
     "image-viewer"
   ],
   "scripts": {
-    "build": "tsc",
-    "postinstall": "yarn build"
+    "build": "tsc"
   },
   "peerDependencies": {
     "react": ">=16.11.0",
