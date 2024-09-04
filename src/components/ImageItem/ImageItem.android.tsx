@@ -154,6 +154,18 @@ const ImageItem = ({
         {...panHandlers}
         style={imageStylesWithOpacity}
       >
+        <View style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: -1,
+        }}>
+            {(isLoaded || imageDimensions) && <ImageLoading />}
+        </View>
         <ExpoImage
           source={imageSrc}
           style={{
@@ -163,7 +175,6 @@ const ImageItem = ({
           onLoad={onLoaded}
         />
       </Animated.View>
-      {(!isLoaded || !imageDimensions) && <ImageLoading />}
     </ScrollView>
   );
 };
