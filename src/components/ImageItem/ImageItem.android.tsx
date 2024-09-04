@@ -157,7 +157,13 @@ const ImageItem = ({
             width: "100%",
             height: "100%",
           }}
-          onLoad={onLoaded}
+          onLoad={() => {
+            console.log("img loaded");
+            onLoaded();
+          }}
+          onError={(error) => {
+            console.log("load img error", error);
+          }}
         />
       </Animated.View>
       {(!isLoaded || !imageDimensions) && <ImageLoading />}
