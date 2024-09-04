@@ -27,6 +27,8 @@ import { getImageStyles, getImageTransform } from "../../utils";
 import { ImageSource } from "../../@types";
 import { ImageLoading } from "./ImageLoading";
 
+import { Image as ExpoImage } from "expo-image";
+
 const SWIPE_CLOSE_OFFSET = 75;
 const SWIPE_CLOSE_VELOCITY = 1.55;
 const SCREEN = Dimensions.get("screen");
@@ -136,11 +138,18 @@ const ImageItem = ({
           onLongPress={onLongPressHandler}
           delayLongPress={delayLongPress}
         >
-          <Animated.Image
-            source={imageSrc}
+          <Animated.View
             style={imageStylesWithOpacity}
-            onLoad={() => setLoaded(true)}
-          />
+          >
+            <ExpoImage
+              source={imageSrc}
+              style={{
+                width: "100%",
+                height: "100%",
+              }}
+              onLoad={() => setLoaded(true)}
+            />
+          </Animated.View>
         </TouchableWithoutFeedback>
       </ScrollView>
     </View>

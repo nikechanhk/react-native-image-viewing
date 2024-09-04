@@ -26,6 +26,8 @@ import { getImageStyles, getImageTransform } from "../../utils";
 import { ImageSource } from "../../@types";
 import { ImageLoading } from "./ImageLoading";
 
+import { Image as ExpoImage } from "expo-image";
+
 const SWIPE_CLOSE_OFFSET = 75;
 const SWIPE_CLOSE_VELOCITY = 1.75;
 const SCREEN = Dimensions.get("window");
@@ -145,12 +147,19 @@ const ImageItem = ({
       })}
     >
       <View style={{ height: SCREEN_HEIGHT }} />
-      <Animated.Image
+      <Animated.View
         {...panHandlers}
-        source={imageSrc}
         style={imageStylesWithOpacity}
-        onLoad={onLoaded}
-      />
+      >
+        <ExpoImage
+          source={imageSrc}
+          style={{
+            width: "100%",
+            height: "100%",
+          }}
+          onLoad={onLoaded}
+        />
+      </Animated.View>
       {(!isLoaded || !imageDimensions) && <ImageLoading />}
     </ScrollView>
   );
