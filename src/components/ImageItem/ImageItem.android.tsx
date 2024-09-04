@@ -56,7 +56,10 @@ const ImageItem = ({
   currentImageIndex,
 }: Props) => {
   const imageContainer = useRef<ScrollView & NativeMethodsMixin>(null);
-  const imageDimensions = useImageDimensions(imageSrc);
+  const imageDimensions = {
+    width: 358,
+    height: 239,
+};
   const [translate, scale] = getImageTransform(imageDimensions, SCREEN);
   const scrollValueY = new Animated.Value(0);
   const [isLoaded, setLoadEnd] = useState(false);
@@ -157,13 +160,7 @@ const ImageItem = ({
             width: "100%",
             height: "100%",
           }}
-          onLoad={() => {
-            console.log("img loaded");
-            onLoaded();
-          }}
-          onError={(error) => {
-            console.log("load img error", error);
-          }}
+          onLoad={onLoaded}
         />
       </Animated.View>
       {(!isLoaded || !imageDimensions) && <ImageLoading />}

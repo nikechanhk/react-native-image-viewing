@@ -7,7 +7,6 @@
  */
 import React, { useCallback, useRef, useState, useEffect } from "react";
 import { View, Animated, ScrollView, Dimensions, StyleSheet, } from "react-native";
-import useImageDimensions from "../../hooks/useImageDimensions";
 import usePanResponder from "../../hooks/usePanResponder";
 import { getImageStyles, getImageTransform } from "../../utils";
 import { ImageLoading } from "./ImageLoading";
@@ -19,7 +18,10 @@ const SCREEN_WIDTH = SCREEN.width;
 const SCREEN_HEIGHT = SCREEN.height;
 const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPress, swipeToCloseEnabled = true, doubleTapToZoomEnabled = true, currentImageIndex, }) => {
     const imageContainer = useRef(null);
-    const imageDimensions = useImageDimensions(imageSrc);
+    const imageDimensions = {
+        width: 358,
+        height: 239,
+    };
     const [translate, scale] = getImageTransform(imageDimensions, SCREEN);
     const scrollValueY = new Animated.Value(0);
     const [isLoaded, setLoadEnd] = useState(false);
@@ -82,12 +84,7 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
         <ExpoImage source={imageSrc} style={{
             width: "100%",
             height: "100%",
-        }} onLoad={() => {
-            console.log("img loaded");
-            onLoaded();
-        }} onError={(error) => {
-            console.log("load img error", error);
-        }}/>
+        }} onLoad={onLoaded}/>
       </Animated.View>
       {(!isLoaded || !imageDimensions) && <ImageLoading />}
     </ScrollView>);
