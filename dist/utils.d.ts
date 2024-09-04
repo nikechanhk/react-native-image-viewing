@@ -7,7 +7,7 @@
  */
 import { Animated, GestureResponderEvent, PanResponderGestureState, PanResponderInstance, NativeTouchEvent } from "react-native";
 import { Dimensions, Position } from "./@types";
-declare type CacheStorageItem = {
+type CacheStorageItem = {
     key: string;
     value: any;
 };
@@ -21,7 +21,7 @@ export declare const getImageTransform: (image: Dimensions | null, screen: Dimen
     readonly x: number;
     readonly y: number;
 }, number];
-export declare const getImageStyles: (image: Dimensions | null, translate: Animated.ValueXY, scale?: Animated.Value | undefined) => {
+export declare const getImageStyles: (image: Dimensions | null, translate: Animated.ValueXY, scale?: Animated.Value) => {
     width: number;
     height: number;
     transform?: undefined;
@@ -35,8 +35,8 @@ export declare const getImageStyles: (image: Dimensions | null, translate: Anima
 export declare const getImageTranslate: (image: Dimensions, screen: Dimensions) => Position;
 export declare const getImageDimensionsByTranslate: (translate: Position, screen: Dimensions) => Dimensions;
 export declare const getImageTranslateForScale: (currentTranslate: Position, targetScale: number, screen: Dimensions) => Position;
-declare type HandlerType = (event: GestureResponderEvent, state: PanResponderGestureState) => void;
-declare type PanResponderProps = {
+type HandlerType = (event: GestureResponderEvent, state: PanResponderGestureState) => void;
+type PanResponderProps = {
     onGrant: HandlerType;
     onStart?: HandlerType;
     onMove: HandlerType;

@@ -32,8 +32,7 @@ export const splitArrayIntoBatches = (arr, batchSize) => arr.reduce((result, ite
     return result;
 }, []);
 export const getImageTransform = (image, screen) => {
-    var _a, _b;
-    if (!((_a = image) === null || _a === void 0 ? void 0 : _a.width) || !((_b = image) === null || _b === void 0 ? void 0 : _b.height)) {
+    if (!(image === null || image === void 0 ? void 0 : image.width) || !(image === null || image === void 0 ? void 0 : image.height)) {
         return [];
     }
     const wScale = screen.width / image.width;
@@ -43,8 +42,7 @@ export const getImageTransform = (image, screen) => {
     return [{ x, y }, scale];
 };
 export const getImageStyles = (image, translate, scale) => {
-    var _a, _b;
-    if (!((_a = image) === null || _a === void 0 ? void 0 : _a.width) || !((_b = image) === null || _b === void 0 ? void 0 : _b.height)) {
+    if (!(image === null || image === void 0 ? void 0 : image.width) || !(image === null || image === void 0 ? void 0 : image.height)) {
         return { width: 0, height: 0 };
     }
     const transform = translate.getTranslateTransform();

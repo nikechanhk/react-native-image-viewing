@@ -7,7 +7,7 @@
  */
 import React from "react";
 import { ImageSource } from "../../@types";
-declare type Props = {
+type Props = {
     imageSrc: ImageSource;
     onRequestClose: () => void;
     onZoom: (scaled: boolean) => void;

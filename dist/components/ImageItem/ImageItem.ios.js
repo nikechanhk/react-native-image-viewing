@@ -11,6 +11,7 @@ import useDoubleTapToZoom from "../../hooks/useDoubleTapToZoom";
 import useImageDimensions from "../../hooks/useImageDimensions";
 import { getImageStyles, getImageTransform } from "../../utils";
 import { ImageLoading } from "./ImageLoading";
+import { Image as ExpoImage } from "expo-image";
 const SWIPE_CLOSE_OFFSET = 75;
 const SWIPE_CLOSE_VELOCITY = 1.55;
 const SCREEN = Dimensions.get("screen");
@@ -34,9 +35,9 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
     const imagesStyles = getImageStyles(imageDimensions, translateValue, scaleValue);
     const imageStylesWithOpacity = { ...imagesStyles, opacity: imageOpacity };
     const onScrollEndDrag = useCallback(({ nativeEvent }) => {
-        var _a, _b, _c, _d;
-        const velocityY = (_c = (_b = (_a = nativeEvent) === null || _a === void 0 ? void 0 : _a.velocity) === null || _b === void 0 ? void 0 : _b.y, (_c !== null && _c !== void 0 ? _c : 0));
-        const scaled = ((_d = nativeEvent) === null || _d === void 0 ? void 0 : _d.zoomScale) > 1;
+        var _a, _b;
+        const velocityY = (_b = (_a = nativeEvent === null || nativeEvent === void 0 ? void 0 : nativeEvent.velocity) === null || _a === void 0 ? void 0 : _a.y) !== null && _b !== void 0 ? _b : 0;
+        const scaled = (nativeEvent === null || nativeEvent === void 0 ? void 0 : nativeEvent.zoomScale) > 1;
         onZoom(scaled);
         setScaled(scaled);
         if (!scaled &&
@@ -46,9 +47,9 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
         }
     }, [scaled]);
     const onScroll = ({ nativeEvent, }) => {
-        var _a, _b, _c, _d;
-        const offsetY = (_c = (_b = (_a = nativeEvent) === null || _a === void 0 ? void 0 : _a.contentOffset) === null || _b === void 0 ? void 0 : _b.y, (_c !== null && _c !== void 0 ? _c : 0));
-        if (((_d = nativeEvent) === null || _d === void 0 ? void 0 : _d.zoomScale) > 1) {
+        var _a, _b;
+        const offsetY = (_b = (_a = nativeEvent === null || nativeEvent === void 0 ? void 0 : nativeEvent.contentOffset) === null || _a === void 0 ? void 0 : _a.y) !== null && _b !== void 0 ? _b : 0;
+        if ((nativeEvent === null || nativeEvent === void 0 ? void 0 : nativeEvent.zoomScale) > 1) {
             return;
         }
         scrollValueY.setValue(offsetY);
@@ -62,7 +63,12 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
     })}>
         {(!loaded || !imageDimensions) && <ImageLoading />}
         <TouchableWithoutFeedback onPress={doubleTapToZoomEnabled ? handleDoubleTap : undefined} onLongPress={onLongPressHandler} delayLongPress={delayLongPress}>
-          <Animated.Image source={imageSrc} style={imageStylesWithOpacity} onLoad={() => setLoaded(true)}/>
+          <Animated.View style={imageStylesWithOpacity}>
+            <ExpoImage source={imageSrc} style={{
+            width: "100%",
+            height: "100%",
+        }} onLoad={() => setLoaded(true)}/>
+          </Animated.View>
         </TouchableWithoutFeedback>
       </ScrollView>
     </View>);

@@ -1,4 +1,5 @@
+import { ModalProps } from "react-native";
 declare const StatusBarManager: ({ presentationStyle, }: {
-    presentationStyle?: "fullScreen" | "pageSheet" | "formSheet" | "overFullScreen" | undefined;
+    presentationStyle?: ModalProps["presentationStyle"];
 }) => null;
 export default StatusBarManager;

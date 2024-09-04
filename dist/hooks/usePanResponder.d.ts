@@ -7,7 +7,7 @@
  */
 import { Animated, GestureResponderHandlers } from "react-native";
 import { Position } from "../@types";
-declare type Props = {
+type Props = {
     initialScale: number;
     initialTranslate: Position;
     onZoom: (isZoomed: boolean) => void;
@@ -16,5 +16,5 @@ declare type Props = {
     delayLongPress: number;
     currentImageIndex: number;
 };
-declare const usePanResponder: ({ initialScale, initialTranslate, onZoom, doubleTapToZoomEnabled, onLongPress, delayLongPress, currentImageIndex, }: Props) => readonly [GestureResponderHandlers, Animated.Value, Animated.ValueXY];
+declare const usePanResponder: ({ initialScale, initialTranslate, onZoom, doubleTapToZoomEnabled, onLongPress, delayLongPress, currentImageIndex, }: Props) => Readonly<[GestureResponderHandlers, Animated.Value, Animated.ValueXY]>;
 export default usePanResponder;
