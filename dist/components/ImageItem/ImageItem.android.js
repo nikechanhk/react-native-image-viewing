@@ -19,8 +19,8 @@ const SCREEN_HEIGHT = SCREEN.height;
 const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPress, swipeToCloseEnabled = true, doubleTapToZoomEnabled = true, currentImageIndex, }) => {
     const imageContainer = useRef(null);
     const imageDimensions = {
-        width: 358,
-        height: 239,
+        width: 716,
+        height: 478,
     };
     const [translate, scale] = getImageTransform(imageDimensions, SCREEN);
     const scrollValueY = new Animated.Value(0);

@@ -57,9 +57,9 @@ const ImageItem = ({
 }: Props) => {
   const imageContainer = useRef<ScrollView & NativeMethodsMixin>(null);
   const imageDimensions = {
-    width: 358,
-    height: 239,
-};
+    width: 716,
+    height: 478,
+  };
   const [translate, scale] = getImageTransform(imageDimensions, SCREEN);
   const scrollValueY = new Animated.Value(0);
   const [isLoaded, setLoadEnd] = useState(false);

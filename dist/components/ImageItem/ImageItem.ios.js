@@ -8,6 +8,7 @@
 import React, { useCallback, useRef, useState } from "react";
 import { Animated, Dimensions, ScrollView, StyleSheet, View, TouchableWithoutFeedback, } from "react-native";
 import useDoubleTapToZoom from "../../hooks/useDoubleTapToZoom";
+import useImageDimensions from "../../hooks/useImageDimensions";
 import { getImageStyles, getImageTransform } from "../../utils";
 import { ImageLoading } from "./ImageLoading";
 import { Image as ExpoImage } from "expo-image";
@@ -20,10 +21,7 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
     const scrollViewRef = useRef(null);
     const [loaded, setLoaded] = useState(false);
     const [scaled, setScaled] = useState(false);
-    const imageDimensions = {
-        width: 358,
-        height: 239,
-    };
+    const imageDimensions = useImageDimensions(imageSrc);
     const handleDoubleTap = useDoubleTapToZoom(scrollViewRef, scaled, SCREEN);
     const [translate, scale] = getImageTransform(imageDimensions, SCREEN);
     const scrollValueY = new Animated.Value(0);
