@@ -15,6 +15,7 @@ import {
   VirtualizedList,
   ModalProps,
   Modal,
+  ScaledSize,
 } from "react-native";
 
 import ImageItem from "./components/ImageItem/ImageItem";
@@ -47,8 +48,6 @@ type Props = {
 const DEFAULT_ANIMATION_TYPE = "fade";
 const DEFAULT_BG_COLOR = "#000";
 const DEFAULT_DELAY_LONG_PRESS = 800;
-const SCREEN = Dimensions.get("screen");
-const SCREEN_WIDTH = SCREEN.width;
 
 function ImageViewing({
   images,
@@ -69,9 +68,20 @@ function ImageViewing({
 }: Props) {
   const imageList = useRef<VirtualizedList<ImageSource>>(null);
   const [opacity, onRequestCloseEnhanced] = useRequestClose(onRequestClose);
-  const [currentImageIndex, onScroll] = useImageIndexChange(imageIndex, SCREEN);
+  const [dimensions, setDimensions] = useState<ScaledSize>(Dimensions.get("window"));
+  const [currentImageIndex, onScroll] = useImageIndexChange(imageIndex, dimensions);
   const [headerTransform, footerTransform, toggleBarsVisible] =
     useAnimatedComponents();
+    
+  useEffect(() => {
+    const onChange = ({ window }: { window: ScaledSize }) => {
+      setDimensions(window);
+    };
+    
+    const subscription = Dimensions.addEventListener("change", onChange);
+    
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     if (onImageIndexChange) {
@@ -99,7 +109,7 @@ function ImageViewing({
       presentationStyle={presentationStyle}
       animationType={animationType}
       onRequestClose={onRequestCloseEnhanced}
-      supportedOrientations={["portrait"]}
+      supportedOrientations={["portrait", "landscape"]}
       hardwareAccelerated
     >
       <StatusBarManager presentationStyle={presentationStyle} />
@@ -127,8 +137,8 @@ function ImageViewing({
           getItem={(_, index) => images[index]}
           getItemCount={() => images.length}
           getItemLayout={(_, index) => ({
-            length: SCREEN_WIDTH,
-            offset: SCREEN_WIDTH * index,
+            length: dimensions.width,
+            offset: dimensions.width * index,
             index,
           })}
           renderItem={({ item: imageSrc }) => (
@@ -141,6 +151,7 @@ function ImageViewing({
               swipeToCloseEnabled={swipeToCloseEnabled}
               doubleTapToZoomEnabled={doubleTapToZoomEnabled}
               currentImageIndex={currentImageIndex}
+              layout={dimensions}
             />
           )}
           onMomentumScrollEnd={onScroll}

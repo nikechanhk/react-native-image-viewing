@@ -11,9 +11,10 @@ import {
   ScrollView,
   NativeTouchEvent,
   NativeSyntheticEvent,
+  ScaledSize,
 } from "react-native";
 
-import { Dimensions } from "../@types";
+// Using ScaledSize from React Native instead of custom Dimensions type
 
 const DOUBLE_TAP_DELAY = 300;
 let lastTapTS: number | null = null;
@@ -25,7 +26,7 @@ let lastTapTS: number | null = null;
 function useDoubleTapToZoom(
   scrollViewRef: React.RefObject<ScrollView>,
   scaled: boolean,
-  screen: Dimensions
+  screen: ScaledSize
 ) {
   const handleDoubleTap = useCallback(
     (event: NativeSyntheticEvent<NativeTouchEvent>) => {

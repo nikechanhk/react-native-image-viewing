@@ -7,11 +7,11 @@
  */
 
 import { useState } from "react";
-import { NativeSyntheticEvent, NativeScrollEvent } from "react-native";
+import { NativeSyntheticEvent, NativeScrollEvent, ScaledSize } from "react-native";
 
-import { Dimensions } from "../@types";
+// Using ScaledSize from React Native instead of custom Dimensions type
 
-const useImageIndexChange = (imageIndex: number, screen: Dimensions) => {
+const useImageIndexChange = (imageIndex: number, screen: ScaledSize) => {
   const [currentImageIndex, setImageIndex] = useState(imageIndex);
   const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const {

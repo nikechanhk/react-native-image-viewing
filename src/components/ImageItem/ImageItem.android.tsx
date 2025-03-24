@@ -12,14 +12,13 @@ import {
   View,
   Animated,
   ScrollView,
-  Dimensions,
   StyleSheet,
   NativeScrollEvent,
   NativeSyntheticEvent,
   NativeMethodsMixin,
+  ScaledSize,
 } from "react-native";
 
-import useImageDimensions from "../../hooks/useImageDimensions";
 import usePanResponder from "../../hooks/usePanResponder";
 
 import { getImageStyles, getImageTransform } from "../../utils";
@@ -30,9 +29,6 @@ import { Image as ExpoImage } from "expo-image";
 
 const SWIPE_CLOSE_OFFSET = 75;
 const SWIPE_CLOSE_VELOCITY = 1.75;
-const SCREEN = Dimensions.get("window");
-const SCREEN_WIDTH = SCREEN.width;
-const SCREEN_HEIGHT = SCREEN.height;
 
 type Props = {
   imageSrc: ImageSource;
@@ -43,6 +39,7 @@ type Props = {
   swipeToCloseEnabled?: boolean;
   doubleTapToZoomEnabled?: boolean;
   currentImageIndex: number;
+  layout: ScaledSize;
 };
 
 const ImageItem = ({
@@ -54,13 +51,14 @@ const ImageItem = ({
   swipeToCloseEnabled = true,
   doubleTapToZoomEnabled = true,
   currentImageIndex,
+  layout,
 }: Props) => {
   const imageContainer = useRef<ScrollView & NativeMethodsMixin>(null);
   const imageDimensions = {
     width: 716,
     height: 478,
   };
-  const [translate, scale] = getImageTransform(imageDimensions, SCREEN);
+  const [translate, scale] = getImageTransform(imageDimensions, { width: layout.width, height: layout.height });
   const scrollValueY = new Animated.Value(0);
   const [isLoaded, setLoadEnd] = useState(false);
 
@@ -79,9 +77,9 @@ const ImageItem = ({
 
   useEffect(() => {
     if (imageContainer.current) {
-        imageContainer.current.scrollTo({ y: SCREEN_HEIGHT, animated: false});
+        imageContainer.current.scrollTo({ y: layout.height, animated: false});
     }
-  }, [imageContainer]);
+  }, [imageContainer, layout.height]);
 
   const onLongPressHandler = useCallback(() => {
     onLongPress(imageSrc);
@@ -95,6 +93,7 @@ const ImageItem = ({
     onLongPress: onLongPressHandler,
     delayLongPress,
     currentImageIndex,
+    layout,
   });
 
   const imagesStyles = getImageStyles(
@@ -115,7 +114,7 @@ const ImageItem = ({
     const offsetY = nativeEvent?.contentOffset?.y ?? 0;
 
     if ((Math.abs(velocityY) > SWIPE_CLOSE_VELOCITY &&
-            (offsetY > SWIPE_CLOSE_OFFSET + SCREEN_HEIGHT || offsetY < -SWIPE_CLOSE_OFFSET + SCREEN_HEIGHT)))
+            (offsetY > SWIPE_CLOSE_OFFSET + layout.height || offsetY < -SWIPE_CLOSE_OFFSET + layout.height)))
              {
             onRequestClose();
         }
@@ -128,8 +127,8 @@ const ImageItem = ({
 
     scrollValueY.setValue(offsetY);
 
-    if (offsetY > SCREEN_HEIGHT + SCREEN_HEIGHT / 2 ||
-        offsetY < SCREEN_HEIGHT - SCREEN_HEIGHT / 2) {
+    if (offsetY > layout.height + layout.height / 2 ||
+        offsetY < layout.height - layout.height / 2) {
             onRequestClose();
         }
   };
@@ -149,7 +148,7 @@ const ImageItem = ({
         onScrollEndDrag,
       })}
     >
-      <View style={{ height: SCREEN_HEIGHT }} />
+      <View style={{ height: layout.height }} />
       <Animated.View
         {...panHandlers}
         style={imageStylesWithOpacity}
@@ -181,11 +180,11 @@ const ImageItem = ({
 
 const styles = StyleSheet.create({
   listItem: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
+    width: "100%",
+    height: "100%",
   },
   imageScrollContainer: {
-    height: SCREEN_HEIGHT * 3,
+    height: "300%",
   },
 });
 
