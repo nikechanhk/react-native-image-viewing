@@ -20,6 +20,7 @@ import {
 } from "react-native";
 
 import usePanResponder from "../../hooks/usePanResponder";
+import useImageDimensions from "../../hooks/useImageDimensions";
 
 import { getImageStyles, getImageTransform } from "../../utils";
 import { ImageSource } from "../../@types";
@@ -54,10 +55,7 @@ const ImageItem = ({
   layout,
 }: Props) => {
   const imageContainer = useRef<ScrollView & NativeMethodsMixin>(null);
-  const imageDimensions = {
-    width: 716,
-    height: 478,
-  };
+  const imageDimensions = useImageDimensions(imageSrc) || { width: 0, height: 0 };
   const [translate, scale] = getImageTransform(imageDimensions, { width: layout.width, height: layout.height });
   const scrollValueY = new Animated.Value(0);
   const [isLoaded, setLoadEnd] = useState(false);

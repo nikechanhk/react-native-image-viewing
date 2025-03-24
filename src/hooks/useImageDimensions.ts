@@ -16,7 +16,8 @@ const CACHE_SIZE = 50;
 const imageDimensionsCache = createCache(CACHE_SIZE);
 
 const useImageDimensions = (image: ImageSource): Dimensions | null => {
-  const [dimensions, setDimensions] = useState<Dimensions | null>(null);
+  // Initialize with default dimensions to prevent layout issues
+  const [dimensions, setDimensions] = useState<Dimensions | null>({ width: 0, height: 0 });
 
   const getImageDimensions = (image: ImageSource): Promise<Dimensions> => {
     return new Promise((resolve) => {

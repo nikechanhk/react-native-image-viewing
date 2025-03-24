@@ -12,7 +12,8 @@ import { createCache } from "../utils";
 const CACHE_SIZE = 50;
 const imageDimensionsCache = createCache(CACHE_SIZE);
 const useImageDimensions = (image) => {
-    const [dimensions, setDimensions] = useState(null);
+    // Initialize with default dimensions to prevent layout issues
+    const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const getImageDimensions = (image) => {
         return new Promise((resolve) => {
             if (typeof image == "number") {

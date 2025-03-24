@@ -8,6 +8,7 @@
 import React, { useCallback, useRef, useState, useEffect } from "react";
 import { View, Animated, ScrollView, StyleSheet, } from "react-native";
 import usePanResponder from "../../hooks/usePanResponder";
+import useImageDimensions from "../../hooks/useImageDimensions";
 import { getImageStyles, getImageTransform } from "../../utils";
 import { ImageLoading } from "./ImageLoading";
 import { Image as ExpoImage } from "expo-image";
@@ -15,10 +16,7 @@ const SWIPE_CLOSE_OFFSET = 75;
 const SWIPE_CLOSE_VELOCITY = 1.75;
 const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPress, swipeToCloseEnabled = true, doubleTapToZoomEnabled = true, currentImageIndex, layout, }) => {
     const imageContainer = useRef(null);
-    const imageDimensions = {
-        width: 716,
-        height: 478,
-    };
+    const imageDimensions = useImageDimensions(imageSrc) || { width: 0, height: 0 };
     const [translate, scale] = getImageTransform(imageDimensions, { width: layout.width, height: layout.height });
     const scrollValueY = new Animated.Value(0);
     const [isLoaded, setLoadEnd] = useState(false);
