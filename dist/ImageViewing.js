@@ -6,7 +6,7 @@
  *
  */
 // @ts-nocheck
-import React, { useCallback, useRef, useEffect } from "react";
+import React, { useCallback, useRef, useEffect, useState } from "react";
 import { Animated, Dimensions, StyleSheet, View, VirtualizedList, Modal, } from "react-native";
 import ImageItem from "./components/ImageItem/ImageItem";
 import ImageDefaultHeader from "./components/ImageDefaultHeader";

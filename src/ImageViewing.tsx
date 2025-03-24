@@ -6,7 +6,7 @@
  *
  */
 // @ts-nocheck
-import React, { ComponentType, useCallback, useRef, useEffect } from "react";
+import React, { ComponentType, useCallback, useRef, useEffect, useState } from "react";
 import {
   Animated,
   Dimensions,
