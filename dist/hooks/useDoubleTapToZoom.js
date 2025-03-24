@@ -6,6 +6,7 @@
  *
  */
 import { useCallback } from "react";
+// Using ScaledSize from React Native instead of custom Dimensions type
 const DOUBLE_TAP_DELAY = 300;
 let lastTapTS = null;
 /**

@@ -6,6 +6,7 @@
  *
  */
 import { useState } from "react";
+// Using ScaledSize from React Native instead of custom Dimensions type
 const useImageIndexChange = (imageIndex, screen) => {
     const [currentImageIndex, setImageIndex] = useState(imageIndex);
     const onScroll = (event) => {

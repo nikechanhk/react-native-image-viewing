@@ -6,6 +6,7 @@
  *
  */
 import React from "react";
+import { ScaledSize } from "react-native";
 import { ImageSource } from "../../@types";
 type Props = {
     imageSrc: ImageSource;
@@ -16,6 +17,7 @@ type Props = {
     swipeToCloseEnabled?: boolean;
     doubleTapToZoomEnabled?: boolean;
     currentImageIndex: number;
+    layout: ScaledSize;
 };
-declare const _default: React.MemoExoticComponent<({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPress, swipeToCloseEnabled, doubleTapToZoomEnabled, currentImageIndex, }: Props) => JSX.Element>;
+declare const _default: React.MemoExoticComponent<({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPress, swipeToCloseEnabled, doubleTapToZoomEnabled, currentImageIndex, layout, }: Props) => JSX.Element>;
 export default _default;

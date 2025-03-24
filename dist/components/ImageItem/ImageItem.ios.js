@@ -6,7 +6,7 @@
  *
  */
 import React, { useCallback, useRef, useState } from "react";
-import { Animated, Dimensions, ScrollView, StyleSheet, View, TouchableWithoutFeedback, } from "react-native";
+import { Animated, ScrollView, StyleSheet, View, TouchableWithoutFeedback, } from "react-native";
 import useDoubleTapToZoom from "../../hooks/useDoubleTapToZoom";
 import useImageDimensions from "../../hooks/useImageDimensions";
 import { getImageStyles, getImageTransform } from "../../utils";
@@ -14,16 +14,13 @@ import { ImageLoading } from "./ImageLoading";
 import { Image as ExpoImage } from "expo-image";
 const SWIPE_CLOSE_OFFSET = 75;
 const SWIPE_CLOSE_VELOCITY = 1.55;
-const SCREEN = Dimensions.get("screen");
-const SCREEN_WIDTH = SCREEN.width;
-const SCREEN_HEIGHT = SCREEN.height;
-const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPress, swipeToCloseEnabled = true, doubleTapToZoomEnabled = true, }) => {
+const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPress, swipeToCloseEnabled = true, doubleTapToZoomEnabled = true, currentImageIndex, layout, }) => {
     const scrollViewRef = useRef(null);
     const [loaded, setLoaded] = useState(false);
     const [scaled, setScaled] = useState(false);
     const imageDimensions = useImageDimensions(imageSrc);
-    const handleDoubleTap = useDoubleTapToZoom(scrollViewRef, scaled, SCREEN);
-    const [translate, scale] = getImageTransform(imageDimensions, SCREEN);
+    const handleDoubleTap = useDoubleTapToZoom(scrollViewRef, scaled, layout);
+    const [translate, scale] = getImageTransform(imageDimensions, { width: layout.width, height: layout.height });
     const scrollValueY = new Animated.Value(0);
     const scaleValue = new Animated.Value(scale || 1);
     const translateValue = new Animated.ValueXY(translate);
@@ -75,11 +72,11 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
 };
 const styles = StyleSheet.create({
     listItem: {
-        width: SCREEN_WIDTH,
-        height: SCREEN_HEIGHT,
+        width: "100%",
+        height: "100%",
     },
     imageScrollContainer: {
-        height: SCREEN_HEIGHT,
+        height: "100%",
     },
 });
 export default React.memo(ImageItem);
