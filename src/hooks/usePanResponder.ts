@@ -27,7 +27,7 @@ import {
 const DOUBLE_TAP_DELAY = 300;
 const OUT_BOUND_MULTIPLIER = 0.75;
 
-const SCALE_MAX = 2;
+const SCALE_MAX = 4;
 
 type Props = {
   initialScale: number;
