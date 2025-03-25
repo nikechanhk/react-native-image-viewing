@@ -6,7 +6,7 @@
  *
  */
 
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useRef, useState, useMemo } from "react";
 
 import {
   Animated,
@@ -116,16 +116,26 @@ const ImageItem = ({
     [imageSrc, onLongPress]
   );
 
+  const dynamicStyles = useMemo(() => ({
+    listItem: {
+      width: layout.width,
+      height: layout.height,
+    },
+    imageScrollContainer: {
+      height: layout.height,
+    },
+  }), [layout.width, layout.height]);
+
   return (
     <View>
       <ScrollView
         ref={scrollViewRef}
-        style={styles.listItem}
+        style={dynamicStyles.listItem}
         pinchGestureEnabled
         showsHorizontalScrollIndicator={false}
         showsVerticalScrollIndicator={false}
         maximumZoomScale={maxScale}
-        contentContainerStyle={styles.imageScrollContainer}
+        contentContainerStyle={dynamicStyles.imageScrollContainer}
         scrollEnabled={swipeToCloseEnabled}
         onScrollEndDrag={onScrollEndDrag}
         scrollEventThrottle={1}
@@ -156,15 +166,5 @@ const ImageItem = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  listItem: {
-    width: "100%",
-    height: "100%",
-  },
-  imageScrollContainer: {
-    height: "100%",
-  },
-});
 
 export default React.memo(ImageItem);
