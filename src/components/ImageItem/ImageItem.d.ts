@@ -19,6 +19,7 @@ declare type Props = {
   swipeToCloseEnabled?: boolean;
   doubleTapToZoomEnabled?: boolean;
   currentImageIndex: number;
+  layout: ScaledSize;
 };
 
 declare const _default: React.MemoExoticComponent<
@@ -30,6 +31,7 @@ declare const _default: React.MemoExoticComponent<
     delayLongPress,
     swipeToCloseEnabled,
     currentImageIndex,
+    layout,
   }: Props) => JSX.Element
 >;
 
