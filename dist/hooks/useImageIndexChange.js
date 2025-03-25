@@ -55,3 +55,4 @@ const useImageIndexChange = (imageIndex, layout) => {
     }, [layout.width, currentImageIndex]);
     return [currentImageIndex, onScroll];
 };
+export default useImageIndexChange;

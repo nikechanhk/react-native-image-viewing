@@ -5,4 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-export {};
+import { NativeSyntheticEvent, NativeScrollEvent } from "react-native";
+import { Dimensions } from "../@types";
+declare const useImageIndexChange: (imageIndex: number, layout: Dimensions) => readonly [number, (event: NativeSyntheticEvent<NativeScrollEvent>) => void];
+export default useImageIndexChange;

@@ -79,3 +79,5 @@ const useImageIndexChange = (imageIndex: number, layout: Dimensions) => {
 
   return [currentImageIndex, onScroll] as const;
 };
+
+export default useImageIndexChange;
