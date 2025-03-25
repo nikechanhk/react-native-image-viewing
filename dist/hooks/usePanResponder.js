@@ -10,7 +10,7 @@ import { Animated, } from "react-native";
 import { createPanResponder, getDistanceBetweenTouches, getImageTranslate, getImageDimensionsByTranslate, } from "../utils";
 const DOUBLE_TAP_DELAY = 300;
 const OUT_BOUND_MULTIPLIER = 0.75;
-const SCALE_MAX = 2;
+const SCALE_MAX = 10;
 const usePanResponder = ({ initialScale, initialTranslate, onZoom, doubleTapToZoomEnabled, onLongPress, delayLongPress, currentImageIndex, layout, }) => {
     let numberInitialTouches = 1;
     let initialTouches = [];

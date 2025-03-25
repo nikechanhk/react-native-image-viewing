@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import React, { useCallback, useRef, useState, useEffect } from "react";
-import { View, Animated, ScrollView, StyleSheet, } from "react-native";
+import React, { useCallback, useRef, useState, useEffect, useMemo } from "react";
+import { View, Animated, ScrollView, } from "react-native";
 import usePanResponder from "../../hooks/usePanResponder";
 import useImageDimensions from "../../hooks/useImageDimensions";
 import { getImageStyles, getImageTransform } from "../../utils";
@@ -71,7 +71,22 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
             onRequestClose();
         }
     };
-    return (<ScrollView ref={imageContainer} style={styles.listItem} pagingEnabled nestedScrollEnabled showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.imageScrollContainer} scrollEnabled={swipeToCloseEnabled} {...(swipeToCloseEnabled && {
+    // Reset scroll position when layout changes
+    useEffect(() => {
+        if (imageContainer.current) {
+            imageContainer.current.scrollTo({ x: 0, y: 0, animated: false });
+        }
+    }, [layout.width, layout.height]);
+    const dynamicStyles = useMemo(() => ({
+        listItem: {
+            width: layout.width,
+            height: layout.height,
+        },
+        imageScrollContainer: {
+            height: layout.height * 2,
+        },
+    }), [layout.width, layout.height]);
+    return (<ScrollView ref={imageContainer} style={dynamicStyles.listItem} pagingEnabled nestedScrollEnabled showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false} contentContainerStyle={dynamicStyles.imageScrollContainer} scrollEnabled={swipeToCloseEnabled} {...(swipeToCloseEnabled && {
         onScroll,
         onScrollEndDrag,
     })}>
@@ -96,13 +111,4 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
       </Animated.View>
     </ScrollView>);
 };
-const styles = StyleSheet.create({
-    listItem: {
-        width: "100%",
-        height: "100%",
-    },
-    imageScrollContainer: {
-        height: "300%",
-    },
-});
 export default React.memo(ImageItem);

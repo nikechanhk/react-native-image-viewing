@@ -22,6 +22,10 @@ function ImageViewing({ images, keyExtractor, imageIndex, visible, onRequestClos
     const [opacity, onRequestCloseEnhanced] = useRequestClose(onRequestClose);
     const [dimensions, setDimensions] = useState(Dimensions.get("window"));
     const [currentImageIndex, onScroll] = useImageIndexChange(imageIndex, dimensions);
+    const previousLayout = useRef(dimensions);
+    const [orientationChanged, setOrientationChanged] = useState(false);
+    const [currentScrollIndex, setCurrentScrollIndex] = useState(imageIndex);
+    const orientationChangeInProgress = useRef(false);
     const [headerTransform, footerTransform, toggleBarsVisible] = useAnimatedComponents();
     useEffect(() => {
         const onChange = ({ window }) => {
@@ -35,34 +39,72 @@ function ImageViewing({ images, keyExtractor, imageIndex, visible, onRequestClos
             onImageIndexChange(currentImageIndex);
         }
     }, [currentImageIndex]);
+    useEffect(() => {
+        if (layout.width !== previousLayout.current.width && layout.width !== 0) {
+            orientationChangeInProgress.current = true;
+            setOrientationChanged(true);
+            const targetIndex = currentImageIndex;
+            const timer = setTimeout(() => {
+                var _a;
+                (_a = imageList.current) === null || _a === void 0 ? void 0 : _a.scrollToIndex({
+                    index: targetIndex,
+                    animated: false,
+                });
+                setCurrentScrollIndex(targetIndex);
+                setTimeout(() => {
+                    orientationChangeInProgress.current = false;
+                }, 100);
+                setOrientationChanged(false);
+                previousLayout.current = layout;
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [layout.width]);
     const onZoom = useCallback((isScaled) => {
         var _a;
-        // @ts-ignore
-        (_a = imageList === null || imageList === void 0 ? void 0 : imageList.current) === null || _a === void 0 ? void 0 : _a.setNativeProps({ scrollEnabled: !isScaled });
+        (_a = imageList.current) === null || _a === void 0 ? void 0 : _a.setNativeProps({ scrollEnabled: !isScaled });
         toggleBarsVisible(!isScaled);
     }, [imageList]);
+    const getItemLayout = useCallback((_, index) => ({
+        length: layout.width,
+        offset: layout.width * index,
+        index,
+    }), [layout.width, orientationChanged]);
+    const onMomentumScrollEnd = useCallback((event) => {
+        if (orientationChangeInProgress.current) {
+            return;
+        }
+        onScroll(event);
+    }, [onScroll, currentImageIndex]);
     if (!visible) {
         return null;
     }
     return (<Modal transparent={presentationStyle === "overFullScreen"} visible={visible} presentationStyle={presentationStyle} animationType={animationType} onRequestClose={onRequestCloseEnhanced} supportedOrientations={["portrait", "landscape"]} hardwareAccelerated>
       <StatusBarManager presentationStyle={presentationStyle}/>
-      <View style={[styles.container, { opacity, backgroundColor }]}>
+      <View style={[styles.container, { opacity, backgroundColor }]} onLayout={(e) => {
+            const newLayout = e.nativeEvent.layout;
+            if (newLayout.width !== layout.width ||
+                newLayout.height !== layout.height) {
+                setLayout(newLayout);
+            }
+        }}>
         <Animated.View style={[styles.header, { transform: headerTransform }]}>
           {typeof HeaderComponent !== "undefined" ? (React.createElement(HeaderComponent, {
             imageIndex: currentImageIndex,
         })) : (<ImageDefaultHeader onRequestClose={onRequestCloseEnhanced}/>)}
         </Animated.View>
-        <VirtualizedList ref={imageList} data={images} horizontal pagingEnabled windowSize={2} initialNumToRender={1} maxToRenderPerBatch={1} showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false} initialScrollIndex={imageIndex} getItem={(_, index) => images[index]} getItemCount={() => images.length} getItemLayout={(_, index) => ({
-            length: dimensions.width,
-            offset: dimensions.width * index,
-            index,
-        })} renderItem={({ item: imageSrc }) => (<ImageItem onZoom={onZoom} imageSrc={imageSrc} onRequestClose={onRequestCloseEnhanced} onLongPress={onLongPress} delayLongPress={delayLongPress} swipeToCloseEnabled={swipeToCloseEnabled} doubleTapToZoomEnabled={doubleTapToZoomEnabled} currentImageIndex={currentImageIndex} layout={dimensions}/>)} onMomentumScrollEnd={onScroll} 
+        <VirtualizedList key={orientationChanged ? 'orientation-changed' : 'normal'} ref={imageList} data={images} horizontal pagingEnabled windowSize={2} initialNumToRender={1} maxToRenderPerBatch={1} showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false} initialScrollIndex={currentScrollIndex} getItem={(_, index) => images[index]} getItemCount={() => images.length} getItemLayout={getItemLayout} renderItem={({ item: imageSrc }) => (<ImageItem onZoom={onZoom} imageSrc={imageSrc} onRequestClose={onRequestCloseEnhanced} onLongPress={onLongPress} delayLongPress={delayLongPress} swipeToCloseEnabled={swipeToCloseEnabled} doubleTapToZoomEnabled={doubleTapToZoomEnabled} currentImageIndex={currentImageIndex} layout={dimensions}/>)} onMomentumScrollEnd={onMomentumScrollEnd} maintainVisibleContentPosition={{
+            minIndexForVisible: 0,
+            autoscrollToTopThreshold: 10,
+        }} 
     //@ts-ignore
     keyExtractor={(imageSrc, index) => keyExtractor
             ? keyExtractor(imageSrc, index)
             : typeof imageSrc === "number"
                 ? `${imageSrc}`
-                : imageSrc.uri}/>
+                : imageSrc.uri} onScrollToIndexFailed={(info) => {
+            console.warn('Scroll to index failed:', info);
+        }}/>
         {typeof FooterComponent !== "undefined" && (<Animated.View style={[styles.footer, { transform: footerTransform }]}>
             {React.createElement(FooterComponent, {
                 imageIndex: currentImageIndex,
