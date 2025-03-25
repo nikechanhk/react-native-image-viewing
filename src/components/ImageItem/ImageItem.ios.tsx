@@ -134,7 +134,7 @@ const ImageItem = ({
         pinchGestureEnabled
         showsHorizontalScrollIndicator={false}
         showsVerticalScrollIndicator={false}
-        maximumZoomScale={maxScale}
+        maximumZoomScale={5}
         contentContainerStyle={dynamicStyles.imageScrollContainer}
         scrollEnabled={swipeToCloseEnabled}
         onScrollEndDrag={onScrollEndDrag}
