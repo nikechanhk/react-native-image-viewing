@@ -74,7 +74,8 @@ function ImageViewing({
   const imageList = useRef<VirtualizedList<ImageSource> & VirtualizedListRef>(null);
   const [opacity, onRequestCloseEnhanced] = useRequestClose(onRequestClose);
   const [dimensions, setDimensions] = useState<ScaledSize>(Dimensions.get("window"));
-  const [currentImageIndex, onScroll] = useImageIndexChange(imageIndex, dimensions);
+  const [layout, setLayout] = useState<Dimensions>({ width: 0, height: 0 });
+  const [currentImageIndex, onScroll] = useImageIndexChange(imageIndex, layout);
   const previousLayout = useRef<ScaledSize>(dimensions);
   const [orientationChanged, setOrientationChanged] = useState(false);
   const [currentScrollIndex, setCurrentScrollIndex] = useState(imageIndex);

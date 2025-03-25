@@ -21,7 +21,8 @@ function ImageViewing({ images, keyExtractor, imageIndex, visible, onRequestClos
     const imageList = useRef(null);
     const [opacity, onRequestCloseEnhanced] = useRequestClose(onRequestClose);
     const [dimensions, setDimensions] = useState(Dimensions.get("window"));
-    const [currentImageIndex, onScroll] = useImageIndexChange(imageIndex, dimensions);
+    const [layout, setLayout] = useState({ width: 0, height: 0 });
+    const [currentImageIndex, onScroll] = useImageIndexChange(imageIndex, layout);
     const previousLayout = useRef(dimensions);
     const [orientationChanged, setOrientationChanged] = useState(false);
     const [currentScrollIndex, setCurrentScrollIndex] = useState(imageIndex);
