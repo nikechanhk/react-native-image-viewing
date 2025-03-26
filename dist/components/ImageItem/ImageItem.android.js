@@ -5,104 +5,86 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import React, { useCallback, useRef, useState, useEffect } from "react";
-import { View, Animated, ScrollView, StyleSheet, } from "react-native";
-import usePanResponder from "../../hooks/usePanResponder";
+import React, { useCallback, useRef, useState, useMemo } from "react";
+import { Animated, ScrollView, View, TouchableWithoutFeedback, } from "react-native";
+import useDoubleTapToZoom from "../../hooks/useDoubleTapToZoom";
 import useImageDimensions from "../../hooks/useImageDimensions";
 import { getImageStyles, getImageTransform } from "../../utils";
 import { ImageLoading } from "./ImageLoading";
 import { Image as ExpoImage } from "expo-image";
 const SWIPE_CLOSE_OFFSET = 75;
-const SWIPE_CLOSE_VELOCITY = 1.75;
+const SWIPE_CLOSE_VELOCITY = 1.75; // Slightly higher threshold for Android
 const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPress, swipeToCloseEnabled = true, doubleTapToZoomEnabled = true, currentImageIndex, layout, }) => {
-    const imageContainer = useRef(null);
+    const scrollViewRef = useRef(null);
+    const [loaded, setLoaded] = useState(false);
+    const [scaled, setScaled] = useState(false);
     const imageDimensions = useImageDimensions(imageSrc) || { width: 0, height: 0 };
+    const handleDoubleTap = useDoubleTapToZoom(scrollViewRef, scaled, layout);
     const [translate, scale] = getImageTransform(imageDimensions, { width: layout.width, height: layout.height });
     const scrollValueY = new Animated.Value(0);
-    const [isLoaded, setLoadEnd] = useState(false);
-    const onLoaded = useCallback(() => setLoadEnd(true), []);
-    const onZoomPerformed = useCallback((isZoomed) => {
-        onZoom(isZoomed);
-        if (imageContainer === null || imageContainer === void 0 ? void 0 : imageContainer.current) {
-            imageContainer.current.setNativeProps({
-                scrollEnabled: !isZoomed,
-            });
-        }
-    }, [imageContainer]);
-    useEffect(() => {
-        if (imageContainer.current) {
-            imageContainer.current.scrollTo({ y: layout.height, animated: false });
-        }
-    }, [imageContainer, layout.height]);
-    const onLongPressHandler = useCallback(() => {
-        onLongPress(imageSrc);
-    }, [imageSrc, onLongPress]);
-    const [panHandlers, scaleValue, translateValue] = usePanResponder({
-        initialScale: scale || 1,
-        initialTranslate: translate || { x: 0, y: 0 },
-        onZoom: onZoomPerformed,
-        doubleTapToZoomEnabled,
-        onLongPress: onLongPressHandler,
-        delayLongPress,
-        currentImageIndex,
-        layout,
-    });
-    const imagesStyles = getImageStyles(imageDimensions, translateValue, scaleValue);
+    const scaleValue = new Animated.Value(scale || 1);
+    const translateValue = new Animated.ValueXY(translate);
+    const maxScale = scale && scale > 0 ? Math.max(1 / scale, 1) : 1;
     const imageOpacity = scrollValueY.interpolate({
         inputRange: [-SWIPE_CLOSE_OFFSET, 0, SWIPE_CLOSE_OFFSET],
-        outputRange: [0.7, 1, 0.7],
+        outputRange: [0.5, 1, 0.5],
     });
-    const imageStylesWithOpacity = { ...imagesStyles, opacity: 1 };
-    const onScrollEndDrag = ({ nativeEvent, }) => {
-        var _a, _b, _c, _d;
-        const velocityY = (_b = (_a = nativeEvent === null || nativeEvent === void 0 ? void 0 : nativeEvent.velocity) === null || _a === void 0 ? void 0 : _a.y) !== null && _b !== void 0 ? _b : 0;
-        const offsetY = (_d = (_c = nativeEvent === null || nativeEvent === void 0 ? void 0 : nativeEvent.contentOffset) === null || _c === void 0 ? void 0 : _c.y) !== null && _d !== void 0 ? _d : 0;
-        if ((Math.abs(velocityY) > SWIPE_CLOSE_VELOCITY &&
-            (offsetY > SWIPE_CLOSE_OFFSET + layout.height || offsetY < -SWIPE_CLOSE_OFFSET + layout.height))) {
-            onRequestClose();
-        }
-    };
-    const onScroll = ({ nativeEvent, }) => {
+    const imagesStyles = getImageStyles(imageDimensions, translateValue, scaleValue);
+    const imageStylesWithOpacity = { ...imagesStyles, opacity: imageOpacity };
+    const onScrollEndDrag = useCallback(({ nativeEvent }) => {
         var _a, _b;
-        const offsetY = (_b = (_a = nativeEvent === null || nativeEvent === void 0 ? void 0 : nativeEvent.contentOffset) === null || _a === void 0 ? void 0 : _a.y) !== null && _b !== void 0 ? _b : 0;
-        scrollValueY.setValue(offsetY);
-        if (offsetY > layout.height + layout.height / 2 ||
-            offsetY < layout.height - layout.height / 2) {
+        const velocityY = (_b = (_a = nativeEvent === null || nativeEvent === void 0 ? void 0 : nativeEvent.velocity) === null || _a === void 0 ? void 0 : _a.y) !== null && _b !== void 0 ? _b : 0;
+        const scaled = (nativeEvent === null || nativeEvent === void 0 ? void 0 : nativeEvent.zoomScale) > 1;
+        onZoom(scaled);
+        setScaled(scaled);
+        if (!scaled &&
+            swipeToCloseEnabled &&
+            Math.abs(velocityY) > SWIPE_CLOSE_VELOCITY) {
             onRequestClose();
         }
+    }, [scaled, swipeToCloseEnabled, onRequestClose, onZoom]);
+    const onScroll = ({ nativeEvent, }) => {
+        var _a, _b, _c;
+        const offsetY = (_b = (_a = nativeEvent === null || nativeEvent === void 0 ? void 0 : nativeEvent.contentOffset) === null || _a === void 0 ? void 0 : _a.y) !== null && _b !== void 0 ? _b : 0;
+        // On Android, we need to check both zoomScale and contentSize
+        // as zoomScale behavior can be inconsistent
+        if (((nativeEvent === null || nativeEvent === void 0 ? void 0 : nativeEvent.zoomScale) > 1) ||
+            (((_c = nativeEvent === null || nativeEvent === void 0 ? void 0 : nativeEvent.contentSize) === null || _c === void 0 ? void 0 : _c.height) > layout.height)) {
+            return;
+        }
+        scrollValueY.setValue(offsetY);
     };
-    return (<ScrollView ref={imageContainer} style={styles.listItem} pagingEnabled nestedScrollEnabled showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.imageScrollContainer} scrollEnabled={swipeToCloseEnabled} {...(swipeToCloseEnabled && {
+    const onLongPressHandler = useCallback((event) => {
+        onLongPress(imageSrc);
+    }, [imageSrc, onLongPress]);
+    const dynamicStyles = useMemo(() => ({
+        listItem: {
+            width: layout.width,
+            height: layout.height,
+        },
+        imageScrollContainer: {
+            height: layout.height,
+        },
+    }), [layout.width, layout.height]);
+    return (<View>
+      <ScrollView ref={scrollViewRef} style={dynamicStyles.listItem} pinchGestureEnabled showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false} maximumZoomScale={5} contentContainerStyle={dynamicStyles.imageScrollContainer} scrollEnabled={swipeToCloseEnabled} onScrollEndDrag={onScrollEndDrag} scrollEventThrottle={16} // Higher value for better Android performance
+     {...(swipeToCloseEnabled && {
         onScroll,
-        onScrollEndDrag,
-    })}>
-      <View style={{ height: layout.height }}/>
-      <Animated.View {...panHandlers} style={imageStylesWithOpacity}>
-        <View style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: -1,
-        }}>
-            {(isLoaded || imageDimensions) && <ImageLoading />}
-        </View>
-        <ExpoImage source={imageSrc} style={{
+    })} 
+    // Android-specific overscroll mode
+    overScrollMode="never">
+        {(!loaded || !imageDimensions) && <ImageLoading />}
+        <TouchableWithoutFeedback onPress={doubleTapToZoomEnabled ? handleDoubleTap : undefined} onLongPress={onLongPressHandler} delayLongPress={delayLongPress}>
+          <Animated.View style={imageStylesWithOpacity}>
+            <ExpoImage source={imageSrc} style={{
             width: "100%",
             height: "100%",
-        }} onLoad={onLoaded}/>
-      </Animated.View>
-    </ScrollView>);
+        }} onLoad={() => setLoaded(true)} 
+    // Add Android-specific caching strategy
+    cachePolicy="memory-disk"/>
+          </Animated.View>
+        </TouchableWithoutFeedback>
+      </ScrollView>
+    </View>);
 };
-const styles = StyleSheet.create({
-    listItem: {
-        width: "100%",
-        height: "100%",
-    },
-    imageScrollContainer: {
-        height: "300%",
-    },
-});
 export default React.memo(ImageItem);
