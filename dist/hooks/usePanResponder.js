@@ -15,7 +15,7 @@ const MIN_DIMENSION = Math.min(SCREEN_WIDTH, SCREEN_HEIGHT);
 const SCALE_MAX = 2;
 const DOUBLE_TAP_DELAY = 300;
 const OUT_BOUND_MULTIPLIER = 0.75;
-const usePanResponder = ({ initialScale, initialTranslate, onZoom, doubleTapToZoomEnabled, onLongPress, delayLongPress, currentImageIndex, }) => {
+const usePanResponder = ({ initialScale, initialTranslate, onZoom, doubleTapToZoomEnabled, onLongPress, delayLongPress, currentImageIndex, layout, }) => {
     let numberInitialTouches = 1;
     let initialTouches = [];
     let currentScale = initialScale;

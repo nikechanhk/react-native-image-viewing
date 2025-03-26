@@ -26,23 +26,14 @@ import useImageDimensions from "../../hooks/useImageDimensions";
 import { getImageStyles, getImageTransform } from "../../utils";
 import { ImageSource } from "../../@types";
 import { ImageLoading } from "./ImageLoading";
+import { Props } from "./ImageItem.d";
 
 import { Image as ExpoImage } from "expo-image";
 
 const SWIPE_CLOSE_OFFSET = 75;
 const SWIPE_CLOSE_VELOCITY = 1.55;
 
-type Props = {
-  imageSrc: ImageSource;
-  onRequestClose: () => void;
-  onZoom: (scaled: boolean) => void;
-  onLongPress: (image: ImageSource) => void;
-  delayLongPress: number;
-  swipeToCloseEnabled?: boolean;
-  doubleTapToZoomEnabled?: boolean;
-  currentImageIndex?: number;
-  layout: ScaledSize;
-};
+// Props type is now imported from ImageItem.d.ts
 
 const ImageItem = ({
   imageSrc,

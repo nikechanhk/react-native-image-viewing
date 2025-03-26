@@ -14,6 +14,7 @@ import {
   GestureResponderHandlers,
   NativeTouchEvent,
   PanResponderGestureState,
+  ScaledSize,
 } from "react-native";
 
 import { Position } from "../@types";
@@ -41,6 +42,7 @@ type Props = {
   onLongPress: () => void;
   delayLongPress: number;
   currentImageIndex: number;
+  layout: ScaledSize;
 };
 
 const usePanResponder = ({
@@ -51,6 +53,7 @@ const usePanResponder = ({
   onLongPress,
   delayLongPress,
   currentImageIndex,
+  layout,
 }: Props): Readonly<
   [GestureResponderHandlers, Animated.Value, Animated.ValueXY]
 > => {

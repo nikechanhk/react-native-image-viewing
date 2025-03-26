@@ -33,7 +33,8 @@ export const splitArrayIntoBatches = (arr, batchSize) => arr.reduce((result, ite
 }, []);
 export const getImageTransform = (image, screen) => {
     if (!(image === null || image === void 0 ? void 0 : image.width) || !(image === null || image === void 0 ? void 0 : image.height)) {
-        return [];
+        // Return default values when image dimensions are not available
+        return [{ x: 0, y: 0 }, 1];
     }
     const wScale = screen.width / image.width;
     const hScale = screen.height / image.height;
@@ -56,6 +57,10 @@ export const getImageStyles = (image, translate, scale) => {
     };
 };
 export const getImageTranslate = (image, screen) => {
+    // Handle case where image dimensions are zero
+    if (!(image === null || image === void 0 ? void 0 : image.width) || !(image === null || image === void 0 ? void 0 : image.height)) {
+        return { x: 0, y: 0 };
+    }
     const getTranslateForAxis = (axis) => {
         const imageSize = axis === "x" ? image.width : image.height;
         const screenSize = axis === "x" ? screen.width : screen.height;

@@ -17,7 +17,7 @@ export declare const createCache: (cacheSize: number) => {
     set(key: string, value: any): void;
 };
 export declare const splitArrayIntoBatches: (arr: any[], batchSize: number) => any[];
-export declare const getImageTransform: (image: Dimensions | null, screen: Dimensions) => readonly [] | readonly [{
+export declare const getImageTransform: (image: Dimensions | null, screen: Dimensions) => readonly [{
     readonly x: number;
     readonly y: number;
 }, number];
