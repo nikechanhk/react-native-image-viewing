@@ -10,7 +10,6 @@ import { Animated, ScrollView, View, TouchableWithoutFeedback, } from "react-nat
 import useDoubleTapToZoom from "../../hooks/useDoubleTapToZoom";
 import useImageDimensions from "../../hooks/useImageDimensions";
 import { getImageStyles, getImageTransform } from "../../utils";
-import { ImageLoading } from "./ImageLoading";
 import { Image as ExpoImage } from "expo-image";
 const SWIPE_CLOSE_OFFSET = 75;
 const SWIPE_CLOSE_VELOCITY = 1.75; // Slightly higher threshold for Android
@@ -73,13 +72,14 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
     })} 
     // Android-specific overscroll mode
     overScrollMode="never">
-        {(!loaded || !imageDimensions) && <ImageLoading />}
+        {/* {(!loaded || !imageDimensions) && <ImageLoading />} */}
         <TouchableWithoutFeedback onPress={doubleTapToZoomEnabled ? handleDoubleTap : undefined} onLongPress={onLongPressHandler} delayLongPress={delayLongPress}>
           <Animated.View style={imageStylesWithOpacity}>
             <ExpoImage source={imageSrc} style={{
             width: "100%",
             height: "100%",
-        }} onLoad={() => setLoaded(true)} 
+        }} 
+    // onLoad={() => setLoaded(true)}
     // Add Android-specific caching strategy
     cachePolicy="memory-disk"/>
           </Animated.View>

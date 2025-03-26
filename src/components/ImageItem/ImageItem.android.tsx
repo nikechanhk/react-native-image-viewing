@@ -151,7 +151,7 @@ const ImageItem = ({
         // Android-specific overscroll mode
         overScrollMode="never"
       >
-        {(!loaded || !imageDimensions) && <ImageLoading />}
+        {/* {(!loaded || !imageDimensions) && <ImageLoading />} */}
         <TouchableWithoutFeedback
           onPress={doubleTapToZoomEnabled ? handleDoubleTap : undefined}
           onLongPress={onLongPressHandler}
@@ -166,7 +166,7 @@ const ImageItem = ({
                 width: "100%",
                 height: "100%",
               }}
-              onLoad={() => setLoaded(true)}
+              // onLoad={() => setLoaded(true)}
               // Add Android-specific caching strategy
               cachePolicy="memory-disk"
             />
