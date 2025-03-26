@@ -26,12 +26,25 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
             scrollViewRef.current.scrollTo({ x: 0, y: 0, animated: false });
         }
     }, [layout.width, layout.height, scaled]);
-    // Determine proper size to maintain aspect ratio and fit screen width
+    // Determine proper size to maintain aspect ratio
     const aspectRatio = imageDimensions.width && imageDimensions.height ?
         imageDimensions.width / imageDimensions.height :
         1;
-    // Calculate height based on aspect ratio
-    const imageHeight = aspectRatio ? layout.width / aspectRatio : layout.height;
+    // Check if image is very tall (height much greater than width)
+    const isTallImage = aspectRatio < 0.6; // 高/寬 比例大於 1.67 的圖片視為長圖
+    // For tall images, prioritize showing full height
+    // For normal or wide images, prioritize showing full width
+    let imageWidth, imageHeight;
+    if (isTallImage) {
+        // 對於長圖片，以高度為優先，調整寬度
+        imageHeight = Math.min(layout.height * 0.95, layout.width / aspectRatio); // 使用 95% 的屏幕高度
+        imageWidth = imageHeight * aspectRatio;
+    }
+    else {
+        // 對於普通或寬圖片，以寬度為優先
+        imageWidth = layout.width;
+        imageHeight = imageWidth / aspectRatio;
+    }
     const maxScale = 3; // Simple fixed max zoom
     const onScrollEndDrag = useCallback(({ nativeEvent }) => {
         var _a, _b;
@@ -67,7 +80,7 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
           <TouchableWithoutFeedback onPress={doubleTapToZoomEnabled ? handleDoubleTap : undefined} onLongPress={onLongPressHandler} delayLongPress={delayLongPress}>
             <View style={styles.touchableContainer}>
               <ExpoImage source={imageSrc} style={{
-            width: layout.width,
+            width: isTallImage ? imageWidth : layout.width,
             height: imageHeight,
             alignSelf: 'center'
         }} contentFit="contain" contentPosition="center" onLoad={() => setLoaded(true)}/>
