@@ -7,5 +7,5 @@
  */
 import React from "react";
 import { Props } from "./ImageItem.d";
-declare const _default: React.MemoExoticComponent<({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPress, swipeToCloseEnabled, doubleTapToZoomEnabled, currentImageIndex, layout, }: Props) => JSX.Element>;
+declare const _default: React.MemoExoticComponent<({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPress, swipeToCloseEnabled, doubleTapToZoomEnabled, currentImageIndex, layout, onSingleTap, }: Props) => JSX.Element>;
 export default _default;

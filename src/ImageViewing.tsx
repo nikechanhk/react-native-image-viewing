@@ -116,8 +116,7 @@ function ImageViewing({
   // 切換控制元素（header 和 footer）顯示/隱藏
   const toggleControls = useCallback(() => {
     setControlsVisible(prev => !prev);
-    console.log("Toggle controls:", !controlsVisible); // 添加調試信息
-  }, [controlsVisible]);
+  }, []);
 
   const onZoom = useCallback(
     (isScaled: boolean) => {
@@ -201,20 +200,6 @@ function ImageViewing({
                 justifyContent: 'center',
               }}
             >
-              <View style={{
-                position: 'absolute', 
-                top: 0, 
-                left: 0, 
-                right: 0, 
-                bottom: 0, 
-                zIndex: 10,
-                opacity: 0.001, // 幾乎透明，但仍能接收點擊事件
-              }}>
-                <TouchableWithoutFeedback onPress={toggleControls}>
-                  <View style={{ width: '100%', height: '100%' }} />
-                </TouchableWithoutFeedback>
-              </View>
-              
               <ImageItem
                 onZoom={onZoom}
                 imageSrc={imageSrc}
@@ -225,6 +210,7 @@ function ImageViewing({
                 doubleTapToZoomEnabled={doubleTapToZoomEnabled}
                 currentImageIndex={currentImageIndex}
                 layout={effectiveDimensions}
+                onSingleTap={toggleControls}
               />
             </View>
           )}

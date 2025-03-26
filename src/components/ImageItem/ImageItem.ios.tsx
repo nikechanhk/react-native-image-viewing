@@ -44,12 +44,19 @@ const ImageItem = ({
   doubleTapToZoomEnabled = true,
   currentImageIndex,
   layout,
+  onSingleTap,
 }: Props) => {
   const scrollViewRef = useRef<ScrollView>(null);
   const [loaded, setLoaded] = useState(false);
   const [scaled, setScaled] = useState(false);
   const imageDimensions = useImageDimensions(imageSrc) || { width: 0, height: 0 };
-  const handleDoubleTap = useDoubleTapToZoom(scrollViewRef, scaled, layout);
+  
+  // 跟踪最後一次點擊的時間和位置
+  const lastTapRef = useRef<number>(0);
+  const lastTapPositionRef = useRef<{ x: number, y: number } | null>(null);
+  
+  // 用原生的 handleDoubleTap 來縮放
+  const doubleTapZoom = useDoubleTapToZoom(scrollViewRef, scaled, layout);
   
   // Reset scroll view when layout changes (orientation change)
   useEffect(() => {
@@ -115,6 +122,48 @@ const ImageItem = ({
     [imageSrc, onLongPress]
   );
 
+  // 處理點擊事件，區分單擊和雙擊
+  const handlePress = useCallback((event: GestureResponderEvent) => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300; // 毫秒
+    const DOUBLE_TAP_RADIUS = 20; // 允許的雙擊位置誤差半徑(像素)
+    
+    const position = {
+      x: event.nativeEvent.locationX,
+      y: event.nativeEvent.locationY
+    };
+    
+    // 判斷是否是雙擊
+    const isDoubleTap = lastTapRef.current > 0 && 
+                      (now - lastTapRef.current) < DOUBLE_TAP_DELAY &&
+                      lastTapPositionRef.current &&
+                      Math.abs(position.x - lastTapPositionRef.current.x) < DOUBLE_TAP_RADIUS &&
+                      Math.abs(position.y - lastTapPositionRef.current.y) < DOUBLE_TAP_RADIUS;
+    
+    if (isDoubleTap) {
+      // 雙擊處理
+      lastTapRef.current = 0;
+      lastTapPositionRef.current = null;
+      
+      // 如果啟用了雙擊縮放，執行縮放
+      if (doubleTapToZoomEnabled) {
+        doubleTapZoom(event);
+      }
+    } else {
+      // 單擊處理
+      lastTapRef.current = now;
+      lastTapPositionRef.current = position;
+      
+      // 延遲處理單擊事件，等待可能的雙擊
+      setTimeout(() => {
+        // 如果 lastTap 沒有被重置，表示這是一個單擊
+        if (lastTapRef.current === now && onSingleTap) {
+          onSingleTap();
+        }
+      }, DOUBLE_TAP_DELAY);
+    }
+  }, [doubleTapToZoomEnabled, doubleTapZoom, onSingleTap]);
+
   return (
     <View style={styles.container}>
       {(!loaded || !imageDimensions) && <ImageLoading />}
@@ -138,7 +187,7 @@ const ImageItem = ({
           {...(swipeToCloseEnabled && { onScroll })}
         >
           <TouchableWithoutFeedback
-            onPress={doubleTapToZoomEnabled ? handleDoubleTap : undefined}
+            onPress={handlePress}
             onLongPress={onLongPressHandler}
             delayLongPress={delayLongPress}
           >

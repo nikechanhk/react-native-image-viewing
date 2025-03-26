@@ -7,7 +7,7 @@
  */
 // @ts-nocheck
 import React, { useCallback, useRef, useEffect, useState } from "react";
-import { Animated, Dimensions, StyleSheet, View, VirtualizedList, Modal, TouchableWithoutFeedback, } from "react-native";
+import { Animated, Dimensions, StyleSheet, View, VirtualizedList, Modal, } from "react-native";
 import ImageItem from "./components/ImageItem/ImageItem";
 import ImageDefaultHeader from "./components/ImageDefaultHeader";
 import StatusBarManager from "./components/StatusBarManager";
@@ -60,8 +60,7 @@ function ImageViewing({ images, keyExtractor, imageIndex, visible, onRequestClos
     // 切換控制元素（header 和 footer）顯示/隱藏
     const toggleControls = useCallback(() => {
         setControlsVisible(prev => !prev);
-        console.log("Toggle controls:", !controlsVisible); // 添加調試信息
-    }, [controlsVisible]);
+    }, []);
     const onZoom = useCallback((isScaled) => {
         var _a;
         // @ts-ignore
@@ -105,21 +104,7 @@ function ImageViewing({ images, keyExtractor, imageIndex, visible, onRequestClos
                 flexDirection: 'column',
                 justifyContent: 'center',
             }}>
-              <View style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                zIndex: 10,
-                opacity: 0.001, // 幾乎透明，但仍能接收點擊事件
-            }}>
-                <TouchableWithoutFeedback onPress={toggleControls}>
-                  <View style={{ width: '100%', height: '100%' }}/>
-                </TouchableWithoutFeedback>
-              </View>
-              
-              <ImageItem onZoom={onZoom} imageSrc={imageSrc} onRequestClose={onRequestCloseEnhanced} onLongPress={onLongPress} delayLongPress={delayLongPress} swipeToCloseEnabled={swipeToCloseEnabled} doubleTapToZoomEnabled={doubleTapToZoomEnabled} currentImageIndex={currentImageIndex} layout={effectiveDimensions}/>
+              <ImageItem onZoom={onZoom} imageSrc={imageSrc} onRequestClose={onRequestCloseEnhanced} onLongPress={onLongPress} delayLongPress={delayLongPress} swipeToCloseEnabled={swipeToCloseEnabled} doubleTapToZoomEnabled={doubleTapToZoomEnabled} currentImageIndex={currentImageIndex} layout={effectiveDimensions} onSingleTap={toggleControls}/>
             </View>)} onMomentumScrollEnd={onScroll} onLayout={() => {
             // Ensure correct scroll position after layout changes
             if (imageList.current && typeof currentImageIndex === 'number' && currentImageIndex > 0) {

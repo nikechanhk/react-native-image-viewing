@@ -20,6 +20,7 @@ export type Props = {
   doubleTapToZoomEnabled?: boolean;
   currentImageIndex: number;
   layout: ScaledSize;
+  onSingleTap?: () => void;
 };
 
 declare const _default: React.MemoExoticComponent<
