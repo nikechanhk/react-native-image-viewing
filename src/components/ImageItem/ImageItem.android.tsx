@@ -58,9 +58,14 @@ const ImageItem = ({
 }: Props) => {
   const scrollViewRef = useRef<ScrollView>(null);
   const [loaded, setLoaded] = useState(false);
-  // Force image to be visible on Android regardless of loaded state
   const [scaled, setScaled] = useState(false);
-  const imageDimensions = useImageDimensions(imageSrc) || { width: 0, height: 0 };
+  // Get image dimensions from hook, but ensure we have non-zero values for Android
+  const hookDimensions = useImageDimensions(imageSrc) || { width: 0, height: 0 };
+  // Use layout dimensions as fallback if hook returns zeros
+  const imageDimensions = {
+    width: hookDimensions.width || layout.width,
+    height: hookDimensions.height || layout.height
+  };
   const handleDoubleTap = useDoubleTapToZoom(scrollViewRef, scaled, layout);
 
   const [translate, scale] = getImageTransform(imageDimensions, { width: layout.width, height: layout.height });
@@ -78,7 +83,11 @@ const ImageItem = ({
     translateValue,
     scaleValue
   );
-  const imageStylesWithOpacity = { ...imagesStyles, opacity: imageOpacity };
+  // Use dimensions from layout if hook returns zeros
+  const imageStylesWithOpacity = { 
+    ...imagesStyles, 
+    opacity: imageOpacity
+  };
 
   const onScrollEndDrag = useCallback(
     ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -166,7 +175,6 @@ const ImageItem = ({
               style={{
                 width: "100%",
                 height: "100%",
-                backgroundColor: 'red',
               }}
               onLoad={() => setLoaded(true)}
               // Android-specific settings

@@ -16,9 +16,14 @@ const SWIPE_CLOSE_VELOCITY = 1.75; // Slightly higher threshold for Android
 const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPress, swipeToCloseEnabled = true, doubleTapToZoomEnabled = true, currentImageIndex, layout, }) => {
     const scrollViewRef = useRef(null);
     const [loaded, setLoaded] = useState(false);
-    // Force image to be visible on Android regardless of loaded state
     const [scaled, setScaled] = useState(false);
-    const imageDimensions = useImageDimensions(imageSrc) || { width: 0, height: 0 };
+    // Get image dimensions from hook, but ensure we have non-zero values for Android
+    const hookDimensions = useImageDimensions(imageSrc) || { width: 0, height: 0 };
+    // Use layout dimensions as fallback if hook returns zeros
+    const imageDimensions = {
+        width: hookDimensions.width || layout.width,
+        height: hookDimensions.height || layout.height
+    };
     const handleDoubleTap = useDoubleTapToZoom(scrollViewRef, scaled, layout);
     const [translate, scale] = getImageTransform(imageDimensions, { width: layout.width, height: layout.height });
     const scrollValueY = new Animated.Value(0);
@@ -30,7 +35,11 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
         outputRange: [0.5, 1, 0.5],
     });
     const imagesStyles = getImageStyles(imageDimensions, translateValue, scaleValue);
-    const imageStylesWithOpacity = { ...imagesStyles, opacity: imageOpacity };
+    // Use dimensions from layout if hook returns zeros
+    const imageStylesWithOpacity = {
+        ...imagesStyles,
+        opacity: imageOpacity
+    };
     const onScrollEndDrag = useCallback(({ nativeEvent }) => {
         var _a, _b;
         const velocityY = (_b = (_a = nativeEvent === null || nativeEvent === void 0 ? void 0 : nativeEvent.velocity) === null || _a === void 0 ? void 0 : _a.y) !== null && _b !== void 0 ? _b : 0;
@@ -79,7 +88,6 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
             <ExpoImage source={imageSrc} style={{
             width: "100%",
             height: "100%",
-            backgroundColor: 'red',
         }} onLoad={() => setLoaded(true)} 
     // Android-specific settings
     cachePolicy="memory-disk" contentFit="contain" transition={300}/>
