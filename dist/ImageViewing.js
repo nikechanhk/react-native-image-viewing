@@ -60,16 +60,15 @@ function ImageViewing({ images, keyExtractor, imageIndex, visible, onRequestClos
     // 切換控制元素（header 和 footer）顯示/隱藏
     const toggleControls = useCallback(() => {
         setControlsVisible(prev => !prev);
-    }, []);
+        console.log("Toggle controls:", !controlsVisible); // 添加調試信息
+    }, [controlsVisible]);
     const onZoom = useCallback((isScaled) => {
         var _a;
         // @ts-ignore
         (_a = imageList === null || imageList === void 0 ? void 0 : imageList.current) === null || _a === void 0 ? void 0 : _a.setNativeProps({ scrollEnabled: !isScaled });
         toggleBarsVisible(!isScaled);
-        // 當放大圖片時，隱藏控制元素
-        if (isScaled) {
-            setControlsVisible(false);
-        }
+        // 當放大圖片時，隱藏控制元素，當縮小時顯示
+        setControlsVisible(!isScaled);
     }, [imageList, toggleBarsVisible]);
     if (!visible) {
         return null;
@@ -98,8 +97,7 @@ function ImageViewing({ images, keyExtractor, imageIndex, visible, onRequestClos
                 offset: dimensions.width * index,
                 index,
             };
-        }} renderItem={({ item: imageSrc }) => (<TouchableWithoutFeedback onPress={toggleControls}>
-              <View style={{
+        }} renderItem={({ item: imageSrc }) => (<View style={{
                 flex: 1,
                 backgroundColor: 'black',
                 width: dimensions.width,
@@ -107,9 +105,22 @@ function ImageViewing({ images, keyExtractor, imageIndex, visible, onRequestClos
                 flexDirection: 'column',
                 justifyContent: 'center',
             }}>
-                <ImageItem onZoom={onZoom} imageSrc={imageSrc} onRequestClose={onRequestCloseEnhanced} onLongPress={onLongPress} delayLongPress={delayLongPress} swipeToCloseEnabled={swipeToCloseEnabled} doubleTapToZoomEnabled={doubleTapToZoomEnabled} currentImageIndex={currentImageIndex} layout={effectiveDimensions}/>
+              <View style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 10,
+                opacity: 0.001, // 幾乎透明，但仍能接收點擊事件
+            }}>
+                <TouchableWithoutFeedback onPress={toggleControls}>
+                  <View style={{ width: '100%', height: '100%' }}/>
+                </TouchableWithoutFeedback>
               </View>
-            </TouchableWithoutFeedback>)} onMomentumScrollEnd={onScroll} onLayout={() => {
+              
+              <ImageItem onZoom={onZoom} imageSrc={imageSrc} onRequestClose={onRequestCloseEnhanced} onLongPress={onLongPress} delayLongPress={delayLongPress} swipeToCloseEnabled={swipeToCloseEnabled} doubleTapToZoomEnabled={doubleTapToZoomEnabled} currentImageIndex={currentImageIndex} layout={effectiveDimensions}/>
+            </View>)} onMomentumScrollEnd={onScroll} onLayout={() => {
             // Ensure correct scroll position after layout changes
             if (imageList.current && typeof currentImageIndex === 'number' && currentImageIndex > 0) {
                 imageList.current.scrollToIndex({
