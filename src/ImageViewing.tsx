@@ -88,7 +88,14 @@ function ImageViewing({
     
   useEffect(() => {
     const onChange = ({ window }: { window: ScaledSize }) => {
+      // Update dimensions when orientation changes
       setDimensions(window);
+      
+      // Force layout update to trigger orientation detection in hooks
+      setLayout(prev => ({
+        width: window.width,
+        height: window.height
+      }));
     };
     
     const subscription = Dimensions.addEventListener("change", onChange);

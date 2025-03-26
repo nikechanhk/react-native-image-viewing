@@ -41,6 +41,17 @@ const useImageIndexChange = (
       return () => clearTimeout(timer);
     }
   }, [layout.width, layout.height]);
+  
+  // Always update orientation when dimensions change
+  useEffect(() => {
+    if (layout.width > 0 && layout.height > 0) {
+      const newIsPortrait = layout.height > layout.width;
+      if (isPortrait.current !== newIsPortrait) {
+        isPortrait.current = newIsPortrait;
+        console.log(`Orientation changed to: ${newIsPortrait ? 'portrait' : 'landscape'}`);
+      }
+    }
+  }, [layout.width, layout.height]);
 
   // Update both internal state and notify parent via callback
   const updateIndex = useCallback((newIndex: number) => {
@@ -73,9 +84,10 @@ const useImageIndexChange = (
       // Calculate the current image index based on scroll position
       const calculatedIndex = Math.round(scrollX / measurementWidth);
       
-      // Handle iOS portrait mode specifically
-      if (Platform.OS === 'ios' && isPortrait.current) {
-        // Always update the index immediately for iOS in portrait
+      // Always update the index for iOS regardless of orientation
+      // This ensures consistent behavior when orientation changes
+      if (Platform.OS === 'ios') {
+        // Always update the index immediately
         if (calculatedIndex >= 0) {
           updateIndex(calculatedIndex);
         }
@@ -93,7 +105,7 @@ const useImageIndexChange = (
           scrollEndTimeoutRef.current = null;
         }, 50);
       } else {
-        // For Android or iOS landscape, update when index changes
+        // For Android, update when index changes
         if (calculatedIndex >= 0 && calculatedIndex !== currentIndex) {
           updateIndex(calculatedIndex);
         }
@@ -102,12 +114,7 @@ const useImageIndexChange = (
     [currentIndex, updateIndex]
   );
 
-  // Track orientation changes
-  useEffect(() => {
-    if (layout.width > 0 && layout.height > 0) {
-      isPortrait.current = layout.height > layout.width;
-    }
-  }, [layout.width, layout.height]);
+
 
   // Reset initialization when layout changes significantly
   useEffect(() => {
