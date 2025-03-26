@@ -58,10 +58,18 @@ export const getImageTransform = (
     return [{ x: 0, y: 0 }, 1] as const;
   }
 
+  // Calculate the scale required to fit the entire image in the screen
+  // while maintaining aspect ratio
   const wScale = screen.width / image.width;
   const hScale = screen.height / image.height;
   const scale = Math.min(wScale, hScale);
-  const { x, y } = getImageTranslate(image, screen);
+  
+  // Ensure image is properly centered
+  const scaledImageWidth = image.width * scale;
+  const scaledImageHeight = image.height * scale;
+  
+  const x = (screen.width - scaledImageWidth) / 2;
+  const y = (screen.height - scaledImageHeight) / 2;
 
   return [{ x, y }, scale] as const;
 };
@@ -85,6 +93,8 @@ export const getImageStyles = (
     width: image.width,
     height: image.height,
     transform,
+    // Add resizeMode property to ensure the image is properly displayed
+    resizeMode: 'contain'
   };
 };
 
@@ -96,16 +106,19 @@ export const getImageTranslate = (
   if (!image?.width || !image?.height) {
     return { x: 0, y: 0 };
   }
-  const getTranslateForAxis = (axis: "x" | "y"): number => {
-    const imageSize = axis === "x" ? image.width : image.height;
-    const screenSize = axis === "x" ? screen.width : screen.height;
-
-    return (screenSize - imageSize) / 2;
-  };
-
+  
+  // Calculate scale first to determine the actual displayed size
+  const wScale = screen.width / image.width;
+  const hScale = screen.height / image.height;
+  const scale = Math.min(wScale, hScale);
+  
+  // Calculate translation based on scaled image dimensions
+  const scaledWidth = image.width * scale;
+  const scaledHeight = image.height * scale;
+  
   return {
-    x: getTranslateForAxis("x"),
-    y: getTranslateForAxis("y"),
+    x: (screen.width - scaledWidth) / 2,
+    y: (screen.height - scaledHeight) / 2,
   };
 };
 

@@ -26,6 +26,9 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
         if (scrollViewRef.current && !scaled) {
             // Reset zoom and position when orientation changes
             scrollViewRef.current.scrollTo({ x: 0, y: 0, animated: false });
+            // Reset scale when orientation changes
+            translateValue.setValue(translate);
+            scaleValue.setValue(scale || 1);
         }
     }, [layout.width, layout.height, scaled]);
     const [translate, scale] = getImageTransform(imageDimensions, { width: layout.width, height: layout.height });
@@ -70,9 +73,9 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
         <TouchableWithoutFeedback onPress={doubleTapToZoomEnabled ? handleDoubleTap : undefined} onLongPress={onLongPressHandler} delayLongPress={delayLongPress}>
           <Animated.View style={imageStylesWithOpacity}>
             <ExpoImage source={imageSrc} style={{
-            width: "100%",
-            height: "100%",
-        }} onLoad={() => setLoaded(true)}/>
+            width: layout.width,
+            height: layout.height,
+        }} contentFit="contain" onLoad={() => setLoaded(true)}/>
           </Animated.View>
         </TouchableWithoutFeedback>
       </ScrollView>
@@ -85,6 +88,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     imageScrollContainer: {
+        width: "100%",
         height: "100%",
         alignItems: 'center',
         justifyContent: 'center',

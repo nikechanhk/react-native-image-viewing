@@ -101,9 +101,9 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
             {(isLoaded || imageDimensions) && <ImageLoading />}
         </View>
         <ExpoImage source={imageSrc} style={{
-            width: "100%",
-            height: "100%",
-        }} onLoad={onLoaded}/>
+            width: layout.width,
+            height: layout.height,
+        }} contentFit="contain" onLoad={onLoaded}/>
       </Animated.View>
     </ScrollView>
     </View>);
@@ -117,6 +117,7 @@ const styles = StyleSheet.create({
     imageScrollContainer: {
         height: "300%",
         alignItems: 'center',
+        justifyContent: 'center',
     },
 });
 export default React.memo(ImageItem);

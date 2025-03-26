@@ -168,7 +168,13 @@ function ImageViewing({
             };
           }}
           renderItem={({ item: imageSrc }) => (
-            <View style={{ width: dimensions.width, height: dimensions.height }}>
+            <View style={{
+              width: dimensions.width,
+              height: dimensions.height,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'black'
+            }}>
               <ImageItem
                 onZoom={onZoom}
                 imageSrc={imageSrc}

@@ -168,9 +168,10 @@ const ImageItem = ({
         <ExpoImage
           source={imageSrc}
           style={{
-            width: "100%",
-            height: "100%",
+            width: layout.width,
+            height: layout.height,
           }}
+          contentFit="contain"
           onLoad={onLoaded}
         />
       </Animated.View>
@@ -188,6 +189,7 @@ const styles = StyleSheet.create({
   imageScrollContainer: {
     height: "300%",
     alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

@@ -25,12 +25,14 @@ export declare const getImageStyles: (image: Dimensions | null, translate: Anima
     width: number;
     height: number;
     transform?: undefined;
+    resizeMode?: undefined;
 } | {
     width: number;
     height: number;
     transform: {
         [key: string]: Animated.Value;
     }[];
+    resizeMode: string;
 };
 export declare const getImageTranslate: (image: Dimensions, screen: Dimensions) => Position;
 export declare const getImageDimensionsByTranslate: (translate: Position, screen: Dimensions) => Dimensions;

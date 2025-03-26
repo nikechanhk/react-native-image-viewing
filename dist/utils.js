@@ -36,10 +36,16 @@ export const getImageTransform = (image, screen) => {
         // Return default values when image dimensions are not available
         return [{ x: 0, y: 0 }, 1];
     }
+    // Calculate the scale required to fit the entire image in the screen
+    // while maintaining aspect ratio
     const wScale = screen.width / image.width;
     const hScale = screen.height / image.height;
     const scale = Math.min(wScale, hScale);
-    const { x, y } = getImageTranslate(image, screen);
+    // Ensure image is properly centered
+    const scaledImageWidth = image.width * scale;
+    const scaledImageHeight = image.height * scale;
+    const x = (screen.width - scaledImageWidth) / 2;
+    const y = (screen.height - scaledImageHeight) / 2;
     return [{ x, y }, scale];
 };
 export const getImageStyles = (image, translate, scale) => {
@@ -54,6 +60,8 @@ export const getImageStyles = (image, translate, scale) => {
         width: image.width,
         height: image.height,
         transform,
+        // Add resizeMode property to ensure the image is properly displayed
+        resizeMode: 'contain'
     };
 };
 export const getImageTranslate = (image, screen) => {
@@ -61,14 +69,16 @@ export const getImageTranslate = (image, screen) => {
     if (!(image === null || image === void 0 ? void 0 : image.width) || !(image === null || image === void 0 ? void 0 : image.height)) {
         return { x: 0, y: 0 };
     }
-    const getTranslateForAxis = (axis) => {
-        const imageSize = axis === "x" ? image.width : image.height;
-        const screenSize = axis === "x" ? screen.width : screen.height;
-        return (screenSize - imageSize) / 2;
-    };
+    // Calculate scale first to determine the actual displayed size
+    const wScale = screen.width / image.width;
+    const hScale = screen.height / image.height;
+    const scale = Math.min(wScale, hScale);
+    // Calculate translation based on scaled image dimensions
+    const scaledWidth = image.width * scale;
+    const scaledHeight = image.height * scale;
     return {
-        x: getTranslateForAxis("x"),
-        y: getTranslateForAxis("y"),
+        x: (screen.width - scaledWidth) / 2,
+        y: (screen.height - scaledHeight) / 2,
     };
 };
 export const getImageDimensionsByTranslate = (translate, screen) => ({

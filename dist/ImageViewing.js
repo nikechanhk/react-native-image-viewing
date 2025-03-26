@@ -80,7 +80,13 @@ function ImageViewing({ images, keyExtractor, imageIndex, visible, onRequestClos
                 offset: dimensions.width * index,
                 index,
             };
-        }} renderItem={({ item: imageSrc }) => (<View style={{ width: dimensions.width, height: dimensions.height }}>
+        }} renderItem={({ item: imageSrc }) => (<View style={{
+                width: dimensions.width,
+                height: dimensions.height,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'black'
+            }}>
               <ImageItem onZoom={onZoom} imageSrc={imageSrc} onRequestClose={onRequestCloseEnhanced} onLongPress={onLongPress} delayLongPress={delayLongPress} swipeToCloseEnabled={swipeToCloseEnabled} doubleTapToZoomEnabled={doubleTapToZoomEnabled} currentImageIndex={currentImageIndex} layout={effectiveDimensions}/>
             </View>)} onMomentumScrollEnd={onScroll} onLayout={() => {
             // Ensure correct scroll position after layout changes
