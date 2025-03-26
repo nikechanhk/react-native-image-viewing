@@ -46,13 +46,15 @@ const useImageIndexChange = (imageIndex: number, layout: Dimensions) => {
       if (measurementWidth > 0) {
         const calculatedIndex = Math.round(scrollX / measurementWidth);
 
-        if (
-          calculatedIndex >= 0 && 
-          calculatedIndex !== currentImageIndex &&
-          calculatedIndex !== lastValidIndex.current
-        ) {
+        // Ensure valid index and prevent duplicate updates
+        if (calculatedIndex >= 0) {
+          // Always update the lastValidIndex for tracking
           lastValidIndex.current = calculatedIndex;
-          setImageIndex(calculatedIndex);
+          
+          // Only trigger state update if index has changed
+          if (calculatedIndex !== currentImageIndex) {
+            setImageIndex(calculatedIndex);
+          }
         }
       }
     },
