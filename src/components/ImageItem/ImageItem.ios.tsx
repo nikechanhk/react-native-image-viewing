@@ -64,7 +64,7 @@ const ImageItem = ({
     1;
   
   // Check if image is very tall (height much greater than width)
-  const isTallImage = aspectRatio < 0.6; // 高/寬 比例大於 1.67 的圖片視為長圖
+  const isTallImage = aspectRatio < 0.7; // 高/寬 比例大於 1.67 的圖片視為長圖
   
   // For tall images, prioritize showing full height
   // For normal or wide images, prioritize showing full width
