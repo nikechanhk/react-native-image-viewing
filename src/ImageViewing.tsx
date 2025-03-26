@@ -16,6 +16,7 @@ import {
   ModalProps,
   Modal,
   ScaledSize,
+  TouchableWithoutFeedback,
 } from "react-native";
 
 import ImageItem from "./components/ImageItem/ImageItem";
@@ -66,6 +67,8 @@ function ImageViewing({
   HeaderComponent,
   FooterComponent,
 }: Props) {
+  // 控制 header 和 footer 的顯示狀態
+  const [controlsVisible, setControlsVisible] = useState(true);
   const imageList = useRef<VirtualizedList<ImageSource>>(null);
   const [opacity, onRequestCloseEnhanced] = useRequestClose(onRequestClose);
   const [dimensions, setDimensions] = useState<ScaledSize>(Dimensions.get("window"));
@@ -110,13 +113,23 @@ function ImageViewing({
     }
   }, [currentImageIndex]);
 
+  // 切換控制元素（header 和 footer）顯示/隱藏
+  const toggleControls = useCallback(() => {
+    setControlsVisible(prev => !prev);
+  }, []);
+
   const onZoom = useCallback(
     (isScaled: boolean) => {
       // @ts-ignore
       imageList?.current?.setNativeProps({ scrollEnabled: !isScaled });
       toggleBarsVisible(!isScaled);
+      
+      // 當放大圖片時，隱藏控制元素
+      if (isScaled) {
+        setControlsVisible(false);
+      }
     },
-    [imageList]
+    [imageList, toggleBarsVisible]
   );
 
   if (!visible) {
@@ -135,7 +148,18 @@ function ImageViewing({
     >
       <StatusBarManager presentationStyle={presentationStyle} />
       <View style={[styles.container, { opacity, backgroundColor }]}>
-        <Animated.View style={[styles.header, { transform: headerTransform }]}>
+        <Animated.View 
+          style={[
+            styles.header, 
+            { 
+              transform: headerTransform,
+              opacity: controlsVisible ? 1 : 0,
+              // 當隱藏時，將 header 移出螢幕外
+              top: controlsVisible ? 0 : -100,
+            }
+          ]}
+          pointerEvents={controlsVisible ? 'auto' : 'none'}
+        >
           {typeof HeaderComponent !== "undefined" ? (
             React.createElement(HeaderComponent, {
               imageIndex: currentImageIndex,
@@ -168,28 +192,30 @@ function ImageViewing({
             };
           }}
           renderItem={({ item: imageSrc }) => (
-            <View 
-              style={{
-                flex: 1,
-                backgroundColor: 'black',
-                width: dimensions.width,
-                height: dimensions.height,
-                flexDirection: 'column',
-                justifyContent: 'center',
-              }}
-            >
-              <ImageItem
-                onZoom={onZoom}
-                imageSrc={imageSrc}
-                onRequestClose={onRequestCloseEnhanced}
-                onLongPress={onLongPress}
-                delayLongPress={delayLongPress}
-                swipeToCloseEnabled={swipeToCloseEnabled}
-                doubleTapToZoomEnabled={doubleTapToZoomEnabled}
-                currentImageIndex={currentImageIndex}
-                layout={effectiveDimensions}
-              />
-            </View>
+            <TouchableWithoutFeedback onPress={toggleControls}>
+              <View 
+                style={{
+                  flex: 1,
+                  backgroundColor: 'black',
+                  width: dimensions.width,
+                  height: dimensions.height,
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                }}
+              >
+                <ImageItem
+                  onZoom={onZoom}
+                  imageSrc={imageSrc}
+                  onRequestClose={onRequestCloseEnhanced}
+                  onLongPress={onLongPress}
+                  delayLongPress={delayLongPress}
+                  swipeToCloseEnabled={swipeToCloseEnabled}
+                  doubleTapToZoomEnabled={doubleTapToZoomEnabled}
+                  currentImageIndex={currentImageIndex}
+                  layout={effectiveDimensions}
+                />
+              </View>
+            </TouchableWithoutFeedback>
           )}
           onMomentumScrollEnd={onScroll}
           onLayout={() => {
@@ -213,7 +239,16 @@ function ImageViewing({
         />
         {typeof FooterComponent !== "undefined" && (
           <Animated.View
-            style={[styles.footer, { transform: footerTransform }]}
+            style={[
+              styles.footer, 
+              { 
+                transform: footerTransform,
+                opacity: controlsVisible ? 1 : 0,
+                // 當隱藏時，將 footer 移出螢幕外
+                bottom: controlsVisible ? 0 : -100,
+              }
+            ]}
+            pointerEvents={controlsVisible ? 'auto' : 'none'}
           >
             {React.createElement(FooterComponent, {
               imageIndex: currentImageIndex,

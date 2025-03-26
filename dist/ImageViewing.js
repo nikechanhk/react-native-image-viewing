@@ -7,7 +7,7 @@
  */
 // @ts-nocheck
 import React, { useCallback, useRef, useEffect, useState } from "react";
-import { Animated, Dimensions, StyleSheet, View, VirtualizedList, Modal, } from "react-native";
+import { Animated, Dimensions, StyleSheet, View, VirtualizedList, Modal, TouchableWithoutFeedback, } from "react-native";
 import ImageItem from "./components/ImageItem/ImageItem";
 import ImageDefaultHeader from "./components/ImageDefaultHeader";
 import StatusBarManager from "./components/StatusBarManager";
@@ -18,6 +18,8 @@ const DEFAULT_ANIMATION_TYPE = "fade";
 const DEFAULT_BG_COLOR = "#000";
 const DEFAULT_DELAY_LONG_PRESS = 800;
 function ImageViewing({ images, keyExtractor, imageIndex, visible, onRequestClose, onLongPress = () => { }, onImageIndexChange, animationType = DEFAULT_ANIMATION_TYPE, backgroundColor = DEFAULT_BG_COLOR, presentationStyle, swipeToCloseEnabled, doubleTapToZoomEnabled, delayLongPress = DEFAULT_DELAY_LONG_PRESS, HeaderComponent, FooterComponent, }) {
+    // 控制 header 和 footer 的顯示狀態
+    const [controlsVisible, setControlsVisible] = useState(true);
     const imageList = useRef(null);
     const [opacity, onRequestCloseEnhanced] = useRequestClose(onRequestClose);
     const [dimensions, setDimensions] = useState(Dimensions.get("window"));
@@ -55,19 +57,35 @@ function ImageViewing({ images, keyExtractor, imageIndex, visible, onRequestClos
             onImageIndexChange(currentImageIndex);
         }
     }, [currentImageIndex]);
+    // 切換控制元素（header 和 footer）顯示/隱藏
+    const toggleControls = useCallback(() => {
+        setControlsVisible(prev => !prev);
+    }, []);
     const onZoom = useCallback((isScaled) => {
         var _a;
         // @ts-ignore
         (_a = imageList === null || imageList === void 0 ? void 0 : imageList.current) === null || _a === void 0 ? void 0 : _a.setNativeProps({ scrollEnabled: !isScaled });
         toggleBarsVisible(!isScaled);
-    }, [imageList]);
+        // 當放大圖片時，隱藏控制元素
+        if (isScaled) {
+            setControlsVisible(false);
+        }
+    }, [imageList, toggleBarsVisible]);
     if (!visible) {
         return null;
     }
     return (<Modal transparent={presentationStyle === "overFullScreen"} visible={visible} presentationStyle={presentationStyle} animationType={animationType} onRequestClose={onRequestCloseEnhanced} supportedOrientations={["portrait", "landscape"]} hardwareAccelerated>
       <StatusBarManager presentationStyle={presentationStyle}/>
       <View style={[styles.container, { opacity, backgroundColor }]}>
-        <Animated.View style={[styles.header, { transform: headerTransform }]}>
+        <Animated.View style={[
+            styles.header,
+            {
+                transform: headerTransform,
+                opacity: controlsVisible ? 1 : 0,
+                // 當隱藏時，將 header 移出螢幕外
+                top: controlsVisible ? 0 : -100,
+            }
+        ]} pointerEvents={controlsVisible ? 'auto' : 'none'}>
           {typeof HeaderComponent !== "undefined" ? (React.createElement(HeaderComponent, {
             imageIndex: currentImageIndex,
         })) : (<ImageDefaultHeader onRequestClose={onRequestCloseEnhanced}/>)}
@@ -80,7 +98,8 @@ function ImageViewing({ images, keyExtractor, imageIndex, visible, onRequestClos
                 offset: dimensions.width * index,
                 index,
             };
-        }} renderItem={({ item: imageSrc }) => (<View style={{
+        }} renderItem={({ item: imageSrc }) => (<TouchableWithoutFeedback onPress={toggleControls}>
+              <View style={{
                 flex: 1,
                 backgroundColor: 'black',
                 width: dimensions.width,
@@ -88,8 +107,9 @@ function ImageViewing({ images, keyExtractor, imageIndex, visible, onRequestClos
                 flexDirection: 'column',
                 justifyContent: 'center',
             }}>
-              <ImageItem onZoom={onZoom} imageSrc={imageSrc} onRequestClose={onRequestCloseEnhanced} onLongPress={onLongPress} delayLongPress={delayLongPress} swipeToCloseEnabled={swipeToCloseEnabled} doubleTapToZoomEnabled={doubleTapToZoomEnabled} currentImageIndex={currentImageIndex} layout={effectiveDimensions}/>
-            </View>)} onMomentumScrollEnd={onScroll} onLayout={() => {
+                <ImageItem onZoom={onZoom} imageSrc={imageSrc} onRequestClose={onRequestCloseEnhanced} onLongPress={onLongPress} delayLongPress={delayLongPress} swipeToCloseEnabled={swipeToCloseEnabled} doubleTapToZoomEnabled={doubleTapToZoomEnabled} currentImageIndex={currentImageIndex} layout={effectiveDimensions}/>
+              </View>
+            </TouchableWithoutFeedback>)} onMomentumScrollEnd={onScroll} onLayout={() => {
             // Ensure correct scroll position after layout changes
             if (imageList.current && typeof currentImageIndex === 'number' && currentImageIndex > 0) {
                 imageList.current.scrollToIndex({
@@ -105,7 +125,15 @@ function ImageViewing({ images, keyExtractor, imageIndex, visible, onRequestClos
             : typeof imageSrc === "number"
                 ? `${imageSrc}`
                 : imageSrc.uri}/>
-        {typeof FooterComponent !== "undefined" && (<Animated.View style={[styles.footer, { transform: footerTransform }]}>
+        {typeof FooterComponent !== "undefined" && (<Animated.View style={[
+                styles.footer,
+                {
+                    transform: footerTransform,
+                    opacity: controlsVisible ? 1 : 0,
+                    // 當隱藏時，將 footer 移出螢幕外
+                    bottom: controlsVisible ? 0 : -100,
+                }
+            ]} pointerEvents={controlsVisible ? 'auto' : 'none'}>
             {React.createElement(FooterComponent, {
                 imageIndex: currentImageIndex,
             })}

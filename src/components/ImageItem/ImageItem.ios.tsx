@@ -71,11 +71,9 @@ const ImageItem = ({
   let imageWidth, imageHeight;
   
   if (isTallImage) {
-    // 對於長圖片，以高度為優先，調整寬度
     imageHeight = Math.min(layout.height * 0.95, layout.width / aspectRatio); // 使用 95% 的屏幕高度
     imageWidth = imageHeight * aspectRatio;
   } else {
-    // 對於普通或寬圖片，以寬度為優先
     imageWidth = layout.width;
     imageHeight = imageWidth / aspectRatio;
   }
