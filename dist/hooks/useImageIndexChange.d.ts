@@ -7,5 +7,6 @@
  */
 import { NativeSyntheticEvent, NativeScrollEvent } from "react-native";
 import { Dimensions } from "../@types";
-declare const useImageIndexChange: (imageIndex: number, layout: Dimensions) => readonly [number, (event: NativeSyntheticEvent<NativeScrollEvent>) => void];
+type IndexChangeCallback = (index: number) => void;
+declare const useImageIndexChange: (initialIndex: number, layout: Dimensions, onIndexChange?: IndexChangeCallback) => readonly [number, (event: NativeSyntheticEvent<NativeScrollEvent>) => void];
 export default useImageIndexChange;

@@ -75,7 +75,10 @@ function ImageViewing({
   const [opacity, onRequestCloseEnhanced] = useRequestClose(onRequestClose);
   const [dimensions, setDimensions] = useState<ScaledSize>(Dimensions.get("window"));
   const [layout, setLayout] = useState<Dimensions>({ width: 0, height: 0 });
-  const [currentImageIndex, onScroll] = useImageIndexChange(imageIndex, layout);
+  const [currentImageIndex, setCurrentImageIndex] = useState(imageIndex);
+  const [_, onScroll] = useImageIndexChange(imageIndex, layout, (newIndex) => {
+    setCurrentImageIndex(newIndex);
+  });
   const previousLayout = useRef<ScaledSize>(dimensions);
   const [orientationChanged, setOrientationChanged] = useState(false);
   const [currentScrollIndex, setCurrentScrollIndex] = useState(imageIndex);
