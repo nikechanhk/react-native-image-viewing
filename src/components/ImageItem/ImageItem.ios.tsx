@@ -127,21 +127,22 @@ const ImageItem = ({
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.listItem}
-        pinchGestureEnabled
-        showsHorizontalScrollIndicator={false}
-        showsVerticalScrollIndicator={false}
-        maximumZoomScale={maxScale}
-        contentContainerStyle={styles.imageScrollContainer}
-        scrollEnabled={swipeToCloseEnabled}
-        onScrollEndDrag={onScrollEndDrag}
-        scrollEventThrottle={1}
-        {...(swipeToCloseEnabled && {
-          onScroll,
-        })}
-      >
+      <View style={styles.centerContainer}>
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.listItem}
+          pinchGestureEnabled
+          showsHorizontalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}
+          maximumZoomScale={maxScale}
+          contentContainerStyle={styles.imageScrollContainer}
+          scrollEnabled={swipeToCloseEnabled}
+          onScrollEndDrag={onScrollEndDrag}
+          scrollEventThrottle={1}
+          {...(swipeToCloseEnabled && {
+            onScroll,
+          })}
+        >
         {(!loaded || !imageDimensions) && <ImageLoading />}
         <TouchableWithoutFeedback
           onPress={doubleTapToZoomEnabled ? handleDoubleTap : undefined}
@@ -157,7 +158,6 @@ const ImageItem = ({
                 width: layout.width,
                 height: layout.height,
                 alignSelf: 'center',
-                resizeMode: 'contain',
               }}
               contentFit="contain"
               contentPosition="center"
@@ -165,7 +165,8 @@ const ImageItem = ({
             />
           </Animated.View>
         </TouchableWithoutFeedback>
-      </ScrollView>
+        </ScrollView>
+      </View>
     </View>
   );
 };
@@ -178,17 +179,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
+  centerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   listItem: {
     width: "100%",
     height: "100%",
-    flex: 1,
   },
   imageScrollContainer: {
     width: "100%",
     height: "100%",
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
   },
 });
 
