@@ -58,18 +58,16 @@ export const getImageTransform = (
     return [{ x: 0, y: 0 }, 1] as const;
   }
 
-  // Calculate the scale required to fit the entire image in the screen
-  // while maintaining aspect ratio
-  const wScale = screen.width / image.width;
-  const hScale = screen.height / image.height;
-  const scale = Math.min(wScale, hScale);
+  // For iOS, prioritize full width display
+  const scale = screen.width / image.width;
   
-  // Ensure image is properly centered
+  // Calculate the centered position
+  // The key is to ensure Y is centered properly
   const scaledImageWidth = image.width * scale;
   const scaledImageHeight = image.height * scale;
   
-  const x = (screen.width - scaledImageWidth) / 2;
-  const y = (screen.height - scaledImageHeight) / 2;
+  const x = 0; // align to left edge since we're using full width
+  const y = (screen.height - scaledImageHeight) / 2; // center vertically
 
   return [{ x, y }, scale] as const;
 };

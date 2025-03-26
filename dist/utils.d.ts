@@ -18,7 +18,7 @@ export declare const createCache: (cacheSize: number) => {
 };
 export declare const splitArrayIntoBatches: (arr: any[], batchSize: number) => any[];
 export declare const getImageTransform: (image: Dimensions | null, screen: Dimensions) => readonly [{
-    readonly x: number;
+    readonly x: 0;
     readonly y: number;
 }, number];
 export declare const getImageStyles: (image: Dimensions | null, translate: Animated.ValueXY, scale?: Animated.Value) => {

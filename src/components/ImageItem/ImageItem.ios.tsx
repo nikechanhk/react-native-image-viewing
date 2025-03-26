@@ -18,12 +18,12 @@ import {
   TouchableWithoutFeedback,
   GestureResponderEvent,
   ScaledSize,
+  Dimensions,
 } from "react-native";
 
 import useDoubleTapToZoom from "../../hooks/useDoubleTapToZoom";
 import useImageDimensions from "../../hooks/useImageDimensions";
 
-import { getImageStyles, getImageTransform } from "../../utils";
 import { ImageSource } from "../../@types";
 import { ImageLoading } from "./ImageLoading";
 import { Props } from "./ImageItem.d";
@@ -33,8 +33,7 @@ import { Image as ExpoImage } from "expo-image";
 const SWIPE_CLOSE_OFFSET = 75;
 const SWIPE_CLOSE_VELOCITY = 1.55;
 
-// Props type is now imported from ImageItem.d.ts
-
+// A very simple component that prioritizes vertical centering
 const ImageItem = ({
   imageSrc,
   onZoom,
@@ -55,37 +54,19 @@ const ImageItem = ({
   // Reset scroll view when layout changes (orientation change)
   useEffect(() => {
     if (scrollViewRef.current && !scaled) {
-      // Reset zoom and position when orientation changes
       scrollViewRef.current.scrollTo({ x: 0, y: 0, animated: false });
-      // Reset scale when orientation changes
-      translateValue.setValue(translate);
-      scaleValue.setValue(scale || 1);
     }
   }, [layout.width, layout.height, scaled]);
 
-  // Ensure images fit screen width first, then adjust height based on aspect ratio
-  const adjustedDimensions = {
-    width: layout.width,
-    height: imageDimensions.width > 0 && imageDimensions.height > 0 ? 
-      (layout.width * (imageDimensions.height / imageDimensions.width)) : 
-      layout.height * 0.8
-  };
-  const [translate, scale] = getImageTransform(adjustedDimensions, { width: layout.width, height: layout.height });
-  const scrollValueY = new Animated.Value(0);
-  const scaleValue = new Animated.Value(scale || 1);
-  const translateValue = new Animated.ValueXY(translate);
-  const maxScale = scale && scale > 0 ? Math.max(1 / scale, 1) : 1;
-
-  const imageOpacity = scrollValueY.interpolate({
-    inputRange: [-SWIPE_CLOSE_OFFSET, 0, SWIPE_CLOSE_OFFSET],
-    outputRange: [0.5, 1, 0.5],
-  });
-  const imagesStyles = getImageStyles(
-    imageDimensions,
-    translateValue,
-    scaleValue
-  );
-  const imageStylesWithOpacity = { ...imagesStyles, opacity: imageOpacity };
+  // Determine proper size to maintain aspect ratio and fit screen width
+  const aspectRatio = imageDimensions.width && imageDimensions.height ? 
+    imageDimensions.width / imageDimensions.height : 
+    1;
+  
+  // Calculate height based on aspect ratio
+  const imageHeight = aspectRatio ? layout.width / aspectRatio : layout.height;
+  
+  const maxScale = 3; // Simple fixed max zoom
 
   const onScrollEndDrag = useCallback(
     ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -109,13 +90,10 @@ const ImageItem = ({
   const onScroll = ({
     nativeEvent,
   }: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const offsetY = nativeEvent?.contentOffset?.y ?? 0;
-
+    // Simple scroll handler for vertical swipes
     if (nativeEvent?.zoomScale > 1) {
       return;
     }
-
-    scrollValueY.setValue(offsetY);
   };
 
   const onLongPressHandler = useCallback(
@@ -127,44 +105,45 @@ const ImageItem = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.centerContainer}>
+      {(!loaded || !imageDimensions) && <ImageLoading />}
+      
+      <View style={styles.imageWrapper}>
         <ScrollView
           ref={scrollViewRef}
-          style={styles.listItem}
+          contentContainerStyle={{
+            minHeight: layout.height,
+            minWidth: layout.width,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+          style={styles.scrollView}
           pinchGestureEnabled
+          maximumZoomScale={maxScale}
           showsHorizontalScrollIndicator={false}
           showsVerticalScrollIndicator={false}
-          maximumZoomScale={maxScale}
-          contentContainerStyle={styles.imageScrollContainer}
           scrollEnabled={swipeToCloseEnabled}
           onScrollEndDrag={onScrollEndDrag}
-          scrollEventThrottle={1}
-          {...(swipeToCloseEnabled && {
-            onScroll,
-          })}
+          {...(swipeToCloseEnabled && { onScroll })}
         >
-        {(!loaded || !imageDimensions) && <ImageLoading />}
-        <TouchableWithoutFeedback
-          onPress={doubleTapToZoomEnabled ? handleDoubleTap : undefined}
-          onLongPress={onLongPressHandler}
-          delayLongPress={delayLongPress}
-        >
-          <Animated.View
-            style={imageStylesWithOpacity}
+          <TouchableWithoutFeedback
+            onPress={doubleTapToZoomEnabled ? handleDoubleTap : undefined}
+            onLongPress={onLongPressHandler}
+            delayLongPress={delayLongPress}
           >
-            <ExpoImage
-              source={imageSrc}
-              style={{
-                width: layout.width,
-                height: layout.height,
-                alignSelf: 'center',
-              }}
-              contentFit="contain"
-              contentPosition="center"
-              onLoad={() => setLoaded(true)}
-            />
-          </Animated.View>
-        </TouchableWithoutFeedback>
+            <View style={styles.touchableContainer}>
+              <ExpoImage
+                source={imageSrc}
+                style={{
+                  width: layout.width,
+                  height: imageHeight,
+                  alignSelf: 'center'
+                }}
+                contentFit="contain"
+                contentPosition="center"
+                onLoad={() => setLoaded(true)}
+              />
+            </View>
+          </TouchableWithoutFeedback>
         </ScrollView>
       </View>
     </View>
@@ -173,31 +152,24 @@ const ImageItem = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: "100%",
-    height: "100%",
-    justifyContent: 'center',
-    alignItems: 'center',
     flex: 1,
+    backgroundColor: 'transparent',
   },
-  centerContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+  imageWrapper: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  listItem: {
-    width: "100%",
-    height: "100%",
+  scrollView: {
+    flex: 1,
+    alignSelf: 'stretch',
   },
-  imageScrollContainer: {
-    width: "100%",
-    height: "100%",
-    alignItems: 'center',
+  touchableContainer: {
+    flex: 1,
     justifyContent: 'center',
-  },
+    alignItems: 'center',
+    alignSelf: 'center',
+  }
 });
 
 export default React.memo(ImageItem);

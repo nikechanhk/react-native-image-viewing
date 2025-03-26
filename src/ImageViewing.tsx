@@ -168,37 +168,27 @@ function ImageViewing({
             };
           }}
           renderItem={({ item: imageSrc }) => (
-            <View style={{
-              width: dimensions.width,
-              height: dimensions.height,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'black',
-              flex: 1,
-            }}>
-              <View style={{
+            <View 
+              style={{
+                flex: 1,
+                backgroundColor: 'black',
                 width: dimensions.width,
                 height: dimensions.height,
-                alignItems: 'center',
+                flexDirection: 'column',
                 justifyContent: 'center',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-              }}>
-                <ImageItem
-                  onZoom={onZoom}
-                  imageSrc={imageSrc}
-                  onRequestClose={onRequestCloseEnhanced}
-                  onLongPress={onLongPress}
-                  delayLongPress={delayLongPress}
-                  swipeToCloseEnabled={swipeToCloseEnabled}
-                  doubleTapToZoomEnabled={doubleTapToZoomEnabled}
-                  currentImageIndex={currentImageIndex}
-                  layout={effectiveDimensions}
-                />
-              </View>
+              }}
+            >
+              <ImageItem
+                onZoom={onZoom}
+                imageSrc={imageSrc}
+                onRequestClose={onRequestCloseEnhanced}
+                onLongPress={onLongPress}
+                delayLongPress={delayLongPress}
+                swipeToCloseEnabled={swipeToCloseEnabled}
+                doubleTapToZoomEnabled={doubleTapToZoomEnabled}
+                currentImageIndex={currentImageIndex}
+                layout={effectiveDimensions}
+              />
             </View>
           )}
           onMomentumScrollEnd={onScroll}
