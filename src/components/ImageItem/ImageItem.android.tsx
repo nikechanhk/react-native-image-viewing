@@ -133,20 +133,21 @@ const ImageItem = ({
   };
 
   return (
-    <ScrollView
-      ref={imageContainer}
-      style={styles.listItem}
-      pagingEnabled
-      nestedScrollEnabled
-      showsHorizontalScrollIndicator={false}
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.imageScrollContainer}
-      scrollEnabled={swipeToCloseEnabled}
-      {...(swipeToCloseEnabled && {
-        onScroll,
-        onScrollEndDrag,
-      })}
-    >
+    <View style={{ width: layout.width, height: layout.height }}>
+      <ScrollView
+        ref={imageContainer}
+        style={styles.listItem}
+        pagingEnabled
+        nestedScrollEnabled
+        showsHorizontalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.imageScrollContainer}
+        scrollEnabled={swipeToCloseEnabled}
+        {...(swipeToCloseEnabled && {
+          onScroll,
+          onScrollEndDrag,
+        })}
+      >
       <View style={{ height: layout.height }} />
       <Animated.View
         {...panHandlers}
@@ -174,6 +175,7 @@ const ImageItem = ({
         />
       </Animated.View>
     </ScrollView>
+    </View>
   );
 };
 
@@ -181,9 +183,11 @@ const styles = StyleSheet.create({
   listItem: {
     width: "100%",
     height: "100%",
+    flex: 1,
   },
   imageScrollContainer: {
     height: "300%",
+    alignItems: 'center',
   },
 });
 

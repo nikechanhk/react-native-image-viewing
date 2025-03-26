@@ -62,7 +62,7 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
     const onLongPressHandler = useCallback((event) => {
         onLongPress(imageSrc);
     }, [imageSrc, onLongPress]);
-    return (<View>
+    return (<View style={{ width: layout.width, height: layout.height }}>
       <ScrollView ref={scrollViewRef} style={styles.listItem} pinchGestureEnabled showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false} maximumZoomScale={maxScale} contentContainerStyle={styles.imageScrollContainer} scrollEnabled={swipeToCloseEnabled} onScrollEndDrag={onScrollEndDrag} scrollEventThrottle={1} {...(swipeToCloseEnabled && {
         onScroll,
     })}>
@@ -82,9 +82,12 @@ const styles = StyleSheet.create({
     listItem: {
         width: "100%",
         height: "100%",
+        flex: 1,
     },
     imageScrollContainer: {
         height: "100%",
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });
 export default React.memo(ImageItem);

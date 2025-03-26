@@ -81,7 +81,8 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
             onRequestClose();
         }
     };
-    return (<ScrollView ref={imageContainer} style={styles.listItem} pagingEnabled nestedScrollEnabled showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.imageScrollContainer} scrollEnabled={swipeToCloseEnabled} {...(swipeToCloseEnabled && {
+    return (<View style={{ width: layout.width, height: layout.height }}>
+      <ScrollView ref={imageContainer} style={styles.listItem} pagingEnabled nestedScrollEnabled showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.imageScrollContainer} scrollEnabled={swipeToCloseEnabled} {...(swipeToCloseEnabled && {
         onScroll,
         onScrollEndDrag,
     })}>
@@ -104,15 +105,18 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
             height: "100%",
         }} onLoad={onLoaded}/>
       </Animated.View>
-    </ScrollView>);
+    </ScrollView>
+    </View>);
 };
 const styles = StyleSheet.create({
     listItem: {
         width: "100%",
         height: "100%",
+        flex: 1,
     },
     imageScrollContainer: {
         height: "300%",
+        alignItems: 'center',
     },
 });
 export default React.memo(ImageItem);

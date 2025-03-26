@@ -21,7 +21,14 @@ function ImageViewing({ images, keyExtractor, imageIndex, visible, onRequestClos
     const imageList = useRef(null);
     const [opacity, onRequestCloseEnhanced] = useRequestClose(onRequestClose);
     const [dimensions, setDimensions] = useState(Dimensions.get("window"));
-    const [currentImageIndex, onScroll] = useImageIndexChange(imageIndex, dimensions);
+    // Force iPad to use full screen width for each image
+    const effectiveDimensions = {
+        width: dimensions.width,
+        height: dimensions.height,
+        scale: dimensions.scale,
+        fontScale: dimensions.fontScale
+    };
+    const [currentImageIndex, onScroll] = useImageIndexChange(imageIndex, effectiveDimensions);
     const [headerTransform, footerTransform, toggleBarsVisible] = useAnimatedComponents();
     useEffect(() => {
         const onChange = ({ window }) => {
@@ -65,11 +72,17 @@ function ImageViewing({ images, keyExtractor, imageIndex, visible, onRequestClos
             imageIndex: currentImageIndex,
         })) : (<ImageDefaultHeader onRequestClose={onRequestCloseEnhanced}/>)}
         </Animated.View>
-        <VirtualizedList ref={imageList} data={images} horizontal pagingEnabled windowSize={2} initialNumToRender={1} maxToRenderPerBatch={1} showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false} initialScrollIndex={imageIndex} getItem={(_, index) => images[index]} getItemCount={() => images.length} getItemLayout={(_, index) => ({
-            length: dimensions.width,
-            offset: dimensions.width * index,
-            index,
-        })} renderItem={({ item: imageSrc }) => (<ImageItem onZoom={onZoom} imageSrc={imageSrc} onRequestClose={onRequestCloseEnhanced} onLongPress={onLongPress} delayLongPress={delayLongPress} swipeToCloseEnabled={swipeToCloseEnabled} doubleTapToZoomEnabled={doubleTapToZoomEnabled} currentImageIndex={currentImageIndex} layout={dimensions}/>)} onMomentumScrollEnd={onScroll} onLayout={() => {
+        <VirtualizedList ref={imageList} data={images} horizontal pagingEnabled windowSize={2} initialNumToRender={2} /* Render more items initially to avoid empty pages */ maxToRenderPerBatch={2} /* Increase batch size for smoother experience */ showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false} initialScrollIndex={imageIndex} decelerationRate="fast" /* Improve snapping behavior */ getItem={(_, index) => images[index]} getItemCount={() => images.length} getItemLayout={(_, index) => {
+            // Ensure each item takes exactly the full screen width
+            // regardless of device (iPhone, iPad, etc.)
+            return {
+                length: dimensions.width,
+                offset: dimensions.width * index,
+                index,
+            };
+        }} renderItem={({ item: imageSrc }) => (<View style={{ width: dimensions.width, height: dimensions.height }}>
+              <ImageItem onZoom={onZoom} imageSrc={imageSrc} onRequestClose={onRequestCloseEnhanced} onLongPress={onLongPress} delayLongPress={delayLongPress} swipeToCloseEnabled={swipeToCloseEnabled} doubleTapToZoomEnabled={doubleTapToZoomEnabled} currentImageIndex={currentImageIndex} layout={effectiveDimensions}/>
+            </View>)} onMomentumScrollEnd={onScroll} onLayout={() => {
             // Ensure correct scroll position after layout changes
             if (imageList.current && typeof currentImageIndex === 'number' && currentImageIndex > 0) {
                 imageList.current.scrollToIndex({

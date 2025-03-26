@@ -116,7 +116,7 @@ const ImageItem = ({
   );
 
   return (
-    <View>
+    <View style={{ width: layout.width, height: layout.height }}>
       <ScrollView
         ref={scrollViewRef}
         style={styles.listItem}
@@ -160,9 +160,12 @@ const styles = StyleSheet.create({
   listItem: {
     width: "100%",
     height: "100%",
+    flex: 1,
   },
   imageScrollContainer: {
     height: "100%",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 
