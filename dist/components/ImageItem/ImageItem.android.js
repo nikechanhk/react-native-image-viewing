@@ -19,7 +19,14 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
     const imageContainer = useRef(null);
     const imageDimensions = useImageDimensions(imageSrc) || { width: 0, height: 0 };
     // Re-calculate transform when layout changes or image dimensions become available
-    const [translate, scale] = getImageTransform(imageDimensions, { width: layout.width, height: layout.height });
+    // Ensure images fit screen width first, then adjust height based on aspect ratio
+    const adjustedDimensions = {
+        width: layout.width,
+        height: imageDimensions.width > 0 && imageDimensions.height > 0 ?
+            (layout.width * (imageDimensions.height / imageDimensions.width)) :
+            layout.height * 0.8
+    };
+    const [translate, scale] = getImageTransform(adjustedDimensions, { width: layout.width, height: layout.height });
     const scrollValueY = new Animated.Value(0);
     const [isLoaded, setLoadEnd] = useState(false);
     // Force redraw when orientation changes
@@ -81,7 +88,7 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
             onRequestClose();
         }
     };
-    return (<View style={{ width: layout.width, height: layout.height }}>
+    return (<View style={styles.container}>
       <ScrollView ref={imageContainer} style={styles.listItem} pagingEnabled nestedScrollEnabled showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.imageScrollContainer} scrollEnabled={swipeToCloseEnabled} {...(swipeToCloseEnabled && {
         onScroll,
         onScrollEndDrag,
@@ -103,12 +110,21 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
         <ExpoImage source={imageSrc} style={{
             width: layout.width,
             height: layout.height,
-        }} contentFit="contain" onLoad={onLoaded}/>
+            alignSelf: 'center',
+            resizeMode: 'contain',
+        }} contentFit="contain" contentPosition="center" onLoad={onLoaded}/>
       </Animated.View>
     </ScrollView>
     </View>);
 };
 const styles = StyleSheet.create({
+    container: {
+        width: "100%",
+        height: "100%",
+        justifyContent: 'center',
+        alignItems: 'center',
+        flex: 1,
+    },
     listItem: {
         width: "100%",
         height: "100%",
@@ -118,6 +134,7 @@ const styles = StyleSheet.create({
         height: "300%",
         alignItems: 'center',
         justifyContent: 'center',
+        flex: 1,
     },
 });
 export default React.memo(ImageItem);

@@ -85,9 +85,22 @@ function ImageViewing({ images, keyExtractor, imageIndex, visible, onRequestClos
                 height: dimensions.height,
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: 'black'
+                backgroundColor: 'black',
+                flex: 1,
             }}>
-              <ImageItem onZoom={onZoom} imageSrc={imageSrc} onRequestClose={onRequestCloseEnhanced} onLongPress={onLongPress} delayLongPress={delayLongPress} swipeToCloseEnabled={swipeToCloseEnabled} doubleTapToZoomEnabled={doubleTapToZoomEnabled} currentImageIndex={currentImageIndex} layout={effectiveDimensions}/>
+              <View style={{
+                width: dimensions.width,
+                height: dimensions.height,
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+            }}>
+                <ImageItem onZoom={onZoom} imageSrc={imageSrc} onRequestClose={onRequestCloseEnhanced} onLongPress={onLongPress} delayLongPress={delayLongPress} swipeToCloseEnabled={swipeToCloseEnabled} doubleTapToZoomEnabled={doubleTapToZoomEnabled} currentImageIndex={currentImageIndex} layout={effectiveDimensions}/>
+              </View>
             </View>)} onMomentumScrollEnd={onScroll} onLayout={() => {
             // Ensure correct scroll position after layout changes
             if (imageList.current && typeof currentImageIndex === 'number' && currentImageIndex > 0) {

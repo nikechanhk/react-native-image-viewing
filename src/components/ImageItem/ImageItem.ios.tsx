@@ -63,7 +63,14 @@ const ImageItem = ({
     }
   }, [layout.width, layout.height, scaled]);
 
-  const [translate, scale] = getImageTransform(imageDimensions, { width: layout.width, height: layout.height });
+  // Ensure images fit screen width first, then adjust height based on aspect ratio
+  const adjustedDimensions = {
+    width: layout.width,
+    height: imageDimensions.width > 0 && imageDimensions.height > 0 ? 
+      (layout.width * (imageDimensions.height / imageDimensions.width)) : 
+      layout.height * 0.8
+  };
+  const [translate, scale] = getImageTransform(adjustedDimensions, { width: layout.width, height: layout.height });
   const scrollValueY = new Animated.Value(0);
   const scaleValue = new Animated.Value(scale || 1);
   const translateValue = new Animated.ValueXY(translate);
@@ -119,7 +126,7 @@ const ImageItem = ({
   );
 
   return (
-    <View style={{ width: layout.width, height: layout.height }}>
+    <View style={styles.container}>
       <ScrollView
         ref={scrollViewRef}
         style={styles.listItem}
@@ -149,8 +156,11 @@ const ImageItem = ({
               style={{
                 width: layout.width,
                 height: layout.height,
+                alignSelf: 'center',
+                resizeMode: 'contain',
               }}
               contentFit="contain"
+              contentPosition="center"
               onLoad={() => setLoaded(true)}
             />
           </Animated.View>
@@ -161,6 +171,13 @@ const ImageItem = ({
 };
 
 const styles = StyleSheet.create({
+  container: {
+    width: "100%",
+    height: "100%",
+    justifyContent: 'center',
+    alignItems: 'center',
+    flex: 1,
+  },
   listItem: {
     width: "100%",
     height: "100%",
@@ -171,6 +188,7 @@ const styles = StyleSheet.create({
     height: "100%",
     alignItems: 'center',
     justifyContent: 'center',
+    flex: 1,
   },
 });
 
