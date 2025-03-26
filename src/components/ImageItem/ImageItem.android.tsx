@@ -32,6 +32,9 @@ import { Image as ExpoImage } from "expo-image";
 
 const SWIPE_CLOSE_OFFSET = 75;
 const SWIPE_CLOSE_VELOCITY = 1.75; // Slightly higher threshold for Android
+const DOUBLE_TAP_DELAY = 300;
+// Track last tap timestamp for double tap detection
+let lastTapTS: number | null = null;
 
 type Props = {
   imageSrc: ImageSource;
@@ -66,7 +69,14 @@ const ImageItem = ({
     width: hookDimensions.width || layout.width,
     height: hookDimensions.height || layout.height
   };
+  // Use our Android-specific double tap zoom implementation
   const handleDoubleTap = useDoubleTapToZoom(scrollViewRef, scaled, layout);
+  
+  // Add a function to manually toggle zoom state for Android
+  const toggleZoom = useCallback(() => {
+    setScaled(!scaled);
+    onZoom(!scaled);
+  }, [scaled, onZoom]);
 
   const [translate, scale] = getImageTransform(imageDimensions, { width: layout.width, height: layout.height });
   const scrollValueY = new Animated.Value(0);
@@ -163,7 +173,17 @@ const ImageItem = ({
       >
         {/* Loading indicator is disabled for Android as it can interfere with image display */}
         <TouchableWithoutFeedback
-          onPress={doubleTapToZoomEnabled ? handleDoubleTap : undefined}
+          onPress={doubleTapToZoomEnabled ? (event) => {
+            // Call the double tap handler
+            handleDoubleTap(event);
+            // Also manually toggle zoom state on double tap
+            if (lastTapTS && new Date().getTime() - lastTapTS < 300) {
+              toggleZoom();
+              lastTapTS = null;
+            } else {
+              lastTapTS = new Date().getTime();
+            }
+          } : undefined}
           onLongPress={onLongPressHandler}
           delayLongPress={delayLongPress}
         >
