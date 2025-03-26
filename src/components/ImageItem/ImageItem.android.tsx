@@ -58,6 +58,7 @@ const ImageItem = ({
 }: Props) => {
   const scrollViewRef = useRef<ScrollView>(null);
   const [loaded, setLoaded] = useState(false);
+  // Force image to be visible on Android regardless of loaded state
   const [scaled, setScaled] = useState(false);
   const imageDimensions = useImageDimensions(imageSrc) || { width: 0, height: 0 };
   const handleDoubleTap = useDoubleTapToZoom(scrollViewRef, scaled, layout);
@@ -151,7 +152,7 @@ const ImageItem = ({
         // Android-specific overscroll mode
         overScrollMode="never"
       >
-        {/* {(!loaded || !imageDimensions) && <ImageLoading />} */}
+        {/* Loading indicator is disabled for Android as it can interfere with image display */}
         <TouchableWithoutFeedback
           onPress={doubleTapToZoomEnabled ? handleDoubleTap : undefined}
           onLongPress={onLongPressHandler}
@@ -166,9 +167,11 @@ const ImageItem = ({
                 width: "100%",
                 height: "100%",
               }}
-              // onLoad={() => setLoaded(true)}
-              // Add Android-specific caching strategy
+              onLoad={() => setLoaded(true)}
+              // Android-specific settings
               cachePolicy="memory-disk"
+              contentFit="contain"
+              transition={300}
             />
           </Animated.View>
         </TouchableWithoutFeedback>

@@ -16,6 +16,7 @@ const SWIPE_CLOSE_VELOCITY = 1.75; // Slightly higher threshold for Android
 const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPress, swipeToCloseEnabled = true, doubleTapToZoomEnabled = true, currentImageIndex, layout, }) => {
     const scrollViewRef = useRef(null);
     const [loaded, setLoaded] = useState(false);
+    // Force image to be visible on Android regardless of loaded state
     const [scaled, setScaled] = useState(false);
     const imageDimensions = useImageDimensions(imageSrc) || { width: 0, height: 0 };
     const handleDoubleTap = useDoubleTapToZoom(scrollViewRef, scaled, layout);
@@ -72,16 +73,15 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
     })} 
     // Android-specific overscroll mode
     overScrollMode="never">
-        {/* {(!loaded || !imageDimensions) && <ImageLoading />} */}
+        {/* Loading indicator is disabled for Android as it can interfere with image display */}
         <TouchableWithoutFeedback onPress={doubleTapToZoomEnabled ? handleDoubleTap : undefined} onLongPress={onLongPressHandler} delayLongPress={delayLongPress}>
           <Animated.View style={imageStylesWithOpacity}>
             <ExpoImage source={imageSrc} style={{
             width: "100%",
             height: "100%",
-        }} 
-    // onLoad={() => setLoaded(true)}
-    // Add Android-specific caching strategy
-    cachePolicy="memory-disk"/>
+        }} onLoad={() => setLoaded(true)} 
+    // Android-specific settings
+    cachePolicy="memory-disk" contentFit="contain" transition={300}/>
           </Animated.View>
         </TouchableWithoutFeedback>
       </ScrollView>
