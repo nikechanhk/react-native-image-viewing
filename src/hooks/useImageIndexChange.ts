@@ -6,23 +6,34 @@
  *
  */
 
-import { useState } from "react";
-import { NativeSyntheticEvent, NativeScrollEvent } from "react-native";
+import { useState, useEffect } from "react";
+import { NativeSyntheticEvent, NativeScrollEvent, ScaledSize } from "react-native";
 
-import { Dimensions } from "../@types";
-
-const useImageIndexChange = (imageIndex: number, screen: Dimensions) => {
+// Enhanced hook to handle orientation changes better
+const useImageIndexChange = (imageIndex: number, screen: ScaledSize) => {
   const [currentImageIndex, setImageIndex] = useState(imageIndex);
+  
+  // Update current index when imageIndex prop changes
+  useEffect(() => {
+    setImageIndex(imageIndex);
+  }, [imageIndex]);
+  
   const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const {
       nativeEvent: {
         contentOffset: { x: scrollX },
+        layoutMeasurement: { width: layoutWidth },
       },
     } = event;
 
-    if (screen.width) {
-      const nextIndex = Math.round(scrollX / screen.width);
-      setImageIndex(nextIndex < 0 ? 0 : nextIndex);
+    // Using layoutMeasurement from the event instead of screen width
+    // This ensures we always have the most up-to-date dimensions
+    // even during orientation changes
+    if (layoutWidth) {
+      const nextIndex = Math.round(scrollX / layoutWidth);
+      if (nextIndex >= 0 && nextIndex !== currentImageIndex) {
+        setImageIndex(nextIndex);
+      }
     }
   };
 

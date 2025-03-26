@@ -54,7 +54,8 @@ export const getImageTransform = (
   screen: Dimensions
 ) => {
   if (!image?.width || !image?.height) {
-    return [] as const;
+    // Return default values when image dimensions are not available
+    return [{ x: 0, y: 0 }, 1] as const;
   }
 
   const wScale = screen.width / image.width;
@@ -91,6 +92,10 @@ export const getImageTranslate = (
   image: Dimensions,
   screen: Dimensions
 ): Position => {
+  // Handle case where image dimensions are zero
+  if (!image?.width || !image?.height) {
+    return { x: 0, y: 0 };
+  }
   const getTranslateForAxis = (axis: "x" | "y"): number => {
     const imageSize = axis === "x" ? image.width : image.height;
     const screenSize = axis === "x" ? screen.width : screen.height;

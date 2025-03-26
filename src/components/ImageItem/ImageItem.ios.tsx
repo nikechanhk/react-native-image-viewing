@@ -6,11 +6,10 @@
  *
  */
 
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useRef, useState, useEffect } from "react";
 
 import {
   Animated,
-  Dimensions,
   ScrollView,
   StyleSheet,
   View,
@@ -18,6 +17,7 @@ import {
   NativeSyntheticEvent,
   TouchableWithoutFeedback,
   GestureResponderEvent,
+  ScaledSize,
 } from "react-native";
 
 import useDoubleTapToZoom from "../../hooks/useDoubleTapToZoom";
@@ -31,9 +31,6 @@ import { Image as ExpoImage } from "expo-image";
 
 const SWIPE_CLOSE_OFFSET = 75;
 const SWIPE_CLOSE_VELOCITY = 1.55;
-const SCREEN = Dimensions.get("screen");
-const SCREEN_WIDTH = SCREEN.width;
-const SCREEN_HEIGHT = SCREEN.height;
 
 type Props = {
   imageSrc: ImageSource;
@@ -43,6 +40,8 @@ type Props = {
   delayLongPress: number;
   swipeToCloseEnabled?: boolean;
   doubleTapToZoomEnabled?: boolean;
+  currentImageIndex?: number;
+  layout: ScaledSize;
 };
 
 const ImageItem = ({
@@ -53,14 +52,24 @@ const ImageItem = ({
   delayLongPress,
   swipeToCloseEnabled = true,
   doubleTapToZoomEnabled = true,
+  currentImageIndex,
+  layout,
 }: Props) => {
   const scrollViewRef = useRef<ScrollView>(null);
   const [loaded, setLoaded] = useState(false);
   const [scaled, setScaled] = useState(false);
-  const imageDimensions = useImageDimensions(imageSrc);
-  const handleDoubleTap = useDoubleTapToZoom(scrollViewRef, scaled, SCREEN);
+  const imageDimensions = useImageDimensions(imageSrc) || { width: 0, height: 0 };
+  const handleDoubleTap = useDoubleTapToZoom(scrollViewRef, scaled, layout);
+  
+  // Reset scroll view when layout changes (orientation change)
+  useEffect(() => {
+    if (scrollViewRef.current && !scaled) {
+      // Reset zoom and position when orientation changes
+      scrollViewRef.current.scrollTo({ x: 0, y: 0, animated: false });
+    }
+  }, [layout.width, layout.height, scaled]);
 
-  const [translate, scale] = getImageTransform(imageDimensions, SCREEN);
+  const [translate, scale] = getImageTransform(imageDimensions, { width: layout.width, height: layout.height });
   const scrollValueY = new Animated.Value(0);
   const scaleValue = new Animated.Value(scale || 1);
   const translateValue = new Animated.ValueXY(translate);
@@ -158,11 +167,11 @@ const ImageItem = ({
 
 const styles = StyleSheet.create({
   listItem: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
+    width: "100%",
+    height: "100%",
   },
   imageScrollContainer: {
-    height: SCREEN_HEIGHT,
+    height: "100%",
   },
 });
 
