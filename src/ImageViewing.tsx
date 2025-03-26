@@ -152,6 +152,7 @@ function ImageViewing({
 
   const onScrollHandler = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (!orientationChangeInProgress.current) {
+      // Always call onScroll to ensure index updates
       onScroll(event);
     }
   }, [onScroll]);
@@ -220,7 +221,7 @@ function ImageViewing({
           )}
           onMomentumScrollEnd={onMomentumScrollEnd}
           onScroll={onScrollHandler}
-          scrollEventThrottle={16}
+          scrollEventThrottle={8} // Use a more frequent update for smoother tracking
           maintainVisibleContentPosition={{
             minIndexForVisible: 0,
             autoscrollToTopThreshold: 10,

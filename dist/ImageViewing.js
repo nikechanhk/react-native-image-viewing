@@ -79,6 +79,7 @@ function ImageViewing({ images, keyExtractor, imageIndex, visible, onRequestClos
     }, [onScroll, currentImageIndex]);
     const onScrollHandler = useCallback((event) => {
         if (!orientationChangeInProgress.current) {
+            // Always call onScroll to ensure index updates
             onScroll(event);
         }
     }, [onScroll]);
@@ -99,7 +100,8 @@ function ImageViewing({ images, keyExtractor, imageIndex, visible, onRequestClos
             imageIndex: currentImageIndex,
         })) : (<ImageDefaultHeader onRequestClose={onRequestCloseEnhanced}/>)}
         </Animated.View>
-        <VirtualizedList key={orientationChanged ? 'orientation-changed' : 'normal'} ref={imageList} data={images} horizontal pagingEnabled windowSize={2} initialNumToRender={1} maxToRenderPerBatch={1} showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false} initialScrollIndex={currentScrollIndex} getItem={(_, index) => images[index]} getItemCount={() => images.length} getItemLayout={getItemLayout} renderItem={({ item: imageSrc }) => (<ImageItem onZoom={onZoom} imageSrc={imageSrc} onRequestClose={onRequestCloseEnhanced} onLongPress={onLongPress} delayLongPress={delayLongPress} swipeToCloseEnabled={swipeToCloseEnabled} doubleTapToZoomEnabled={doubleTapToZoomEnabled} currentImageIndex={currentImageIndex} layout={dimensions}/>)} onMomentumScrollEnd={onMomentumScrollEnd} onScroll={onScrollHandler} scrollEventThrottle={16} maintainVisibleContentPosition={{
+        <VirtualizedList key={orientationChanged ? 'orientation-changed' : 'normal'} ref={imageList} data={images} horizontal pagingEnabled windowSize={2} initialNumToRender={1} maxToRenderPerBatch={1} showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false} initialScrollIndex={currentScrollIndex} getItem={(_, index) => images[index]} getItemCount={() => images.length} getItemLayout={getItemLayout} renderItem={({ item: imageSrc }) => (<ImageItem onZoom={onZoom} imageSrc={imageSrc} onRequestClose={onRequestCloseEnhanced} onLongPress={onLongPress} delayLongPress={delayLongPress} swipeToCloseEnabled={swipeToCloseEnabled} doubleTapToZoomEnabled={doubleTapToZoomEnabled} currentImageIndex={currentImageIndex} layout={dimensions}/>)} onMomentumScrollEnd={onMomentumScrollEnd} onScroll={onScrollHandler} scrollEventThrottle={8} // Use a more frequent update for smoother tracking
+     maintainVisibleContentPosition={{
             minIndexForVisible: 0,
             autoscrollToTopThreshold: 10,
         }} 

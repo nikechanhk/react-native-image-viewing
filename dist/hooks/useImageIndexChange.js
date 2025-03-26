@@ -6,11 +6,13 @@
  *
  */
 import { useState, useEffect, useCallback, useRef } from "react";
+import { Platform } from "react-native";
 const useImageIndexChange = (imageIndex, layout) => {
     const [currentImageIndex, setImageIndex] = useState(imageIndex);
-    const lastValidIndex = useRef(imageIndex);
+    const lastScrollX = useRef(0);
     const isInitializing = useRef(true);
     const initialLayoutWidth = useRef(null);
+    const scrollEndTimeoutRef = useRef(null);
     // Set initial layout width
     useEffect(() => {
         if (layout.width > 0 && initialLayoutWidth.current === null) {
@@ -22,40 +24,66 @@ const useImageIndexChange = (imageIndex, layout) => {
             return () => clearTimeout(timer);
         }
     }, [layout.width]);
-    const onScroll = useCallback((event) => {
-        const { nativeEvent: { contentOffset: { x: scrollX }, layoutMeasurement: { width: measurementWidth }, }, } = event;
-        // Ignore scroll events during initialization
-        if (isInitializing.current) {
-            return;
-        }
-        if (measurementWidth > 0) {
-            const calculatedIndex = Math.round(scrollX / measurementWidth);
-            // Ensure valid index and prevent duplicate updates
-            if (calculatedIndex >= 0) {
-                // Always update the lastValidIndex for tracking
-                lastValidIndex.current = calculatedIndex;
-                // Only trigger state update if index has changed
-                if (calculatedIndex !== currentImageIndex) {
-                    setImageIndex(calculatedIndex);
-                }
-            }
+    const updateIndex = useCallback((newIndex) => {
+        if (newIndex >= 0 && newIndex !== currentImageIndex) {
+            setImageIndex(newIndex);
         }
     }, [currentImageIndex]);
+    const onScroll = useCallback((event) => {
+        const { nativeEvent: { contentOffset: { x: scrollX }, layoutMeasurement: { width: measurementWidth }, }, } = event;
+        // Store the last scroll position
+        lastScrollX.current = scrollX;
+        // Ignore scroll events during initialization
+        if (isInitializing.current || measurementWidth <= 0) {
+            return;
+        }
+        // Calculate the current image index based on scroll position
+        const calculatedIndex = Math.round(scrollX / measurementWidth);
+        // For iOS in portrait, we need to be more aggressive with updates
+        if (Platform.OS === 'ios') {
+            // Clear any existing timeout
+            if (scrollEndTimeoutRef.current) {
+                clearTimeout(scrollEndTimeoutRef.current);
+            }
+            // Set a timeout to update the index after scrolling stops
+            scrollEndTimeoutRef.current = setTimeout(() => {
+                const finalIndex = Math.round(lastScrollX.current / measurementWidth);
+                updateIndex(finalIndex);
+                scrollEndTimeoutRef.current = null;
+            }, 50);
+            // Also update immediately if the calculated index is different
+            if (calculatedIndex >= 0 && calculatedIndex !== currentImageIndex) {
+                updateIndex(calculatedIndex);
+            }
+        }
+        else {
+            // For Android, just update when the index changes
+            if (calculatedIndex >= 0 && calculatedIndex !== currentImageIndex) {
+                updateIndex(calculatedIndex);
+            }
+        }
+    }, [currentImageIndex, updateIndex]);
     // Reset initialization when layout changes significantly
     useEffect(() => {
         if (initialLayoutWidth.current &&
             Math.abs(layout.width - initialLayoutWidth.current) > 50) {
             isInitializing.current = true;
             initialLayoutWidth.current = layout.width;
-            // Preserve the current index during orientation change
-            lastValidIndex.current = currentImageIndex;
             // Reset after layout change
             const timer = setTimeout(() => {
                 isInitializing.current = false;
             }, 100);
             return () => clearTimeout(timer);
         }
-    }, [layout.width, currentImageIndex]);
+    }, [layout.width]);
+    // Clean up timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (scrollEndTimeoutRef.current) {
+                clearTimeout(scrollEndTimeoutRef.current);
+            }
+        };
+    }, []);
     return [currentImageIndex, onScroll];
 };
 export default useImageIndexChange;
