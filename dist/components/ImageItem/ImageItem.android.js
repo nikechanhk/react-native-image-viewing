@@ -79,6 +79,7 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
             <ExpoImage source={imageSrc} style={{
             width: "100%",
             height: "100%",
+            backgroundColor: 'red',
         }} onLoad={() => setLoaded(true)} 
     // Android-specific settings
     cachePolicy="memory-disk" contentFit="contain" transition={300}/>

@@ -166,6 +166,7 @@ const ImageItem = ({
               style={{
                 width: "100%",
                 height: "100%",
+                backgroundColor: 'red',
               }}
               onLoad={() => setLoaded(true)}
               // Android-specific settings
