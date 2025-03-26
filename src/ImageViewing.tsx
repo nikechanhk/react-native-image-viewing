@@ -75,10 +75,10 @@ function ImageViewing({
   const [opacity, onRequestCloseEnhanced] = useRequestClose(onRequestClose);
   const [dimensions, setDimensions] = useState<ScaledSize>(Dimensions.get("window"));
   const [layout, setLayout] = useState<Dimensions>({ width: 0, height: 0 });
+  // Directly manage the image index without relying on the hook
   const [currentImageIndex, setCurrentImageIndex] = useState(imageIndex);
-  const [_, onScroll] = useImageIndexChange(imageIndex, layout, (newIndex) => {
-    setCurrentImageIndex(newIndex);
-  });
+  const lastOffsetX = useRef(0);
+  const isScrolling = useRef(false);
   const previousLayout = useRef<ScaledSize>(dimensions);
   const [orientationChanged, setOrientationChanged] = useState(false);
   const [currentScrollIndex, setCurrentScrollIndex] = useState(imageIndex);
@@ -153,19 +153,42 @@ function ImageViewing({
     [layout.width, orientationChanged]
   );
 
+
+
+  // Direct scroll handler that calculates index without using the hook
+  const onScrollHandler = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (orientationChangeInProgress.current) {
+      return;
+    }
+
+    const { contentOffset, layoutMeasurement } = event.nativeEvent;
+    lastOffsetX.current = contentOffset.x;
+    isScrolling.current = true;
+
+    if (layoutMeasurement.width > 0) {
+      const index = Math.round(contentOffset.x / layoutMeasurement.width);
+      if (index >= 0 && index !== currentImageIndex) {
+        setCurrentImageIndex(index);
+      }
+    }
+  }, [currentImageIndex]);
+
+  // Handle scroll end to ensure final position is captured
   const onMomentumScrollEnd = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (orientationChangeInProgress.current) {
       return;
     }
-    onScroll(event);
-  }, [onScroll, currentImageIndex]);
 
-  const onScrollHandler = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    if (!orientationChangeInProgress.current) {
-      // Always call onScroll to ensure index updates
-      onScroll(event);
+    isScrolling.current = false;
+    const { layoutMeasurement } = event.nativeEvent;
+    
+    if (layoutMeasurement.width > 0) {
+      const finalIndex = Math.round(lastOffsetX.current / layoutMeasurement.width);
+      if (finalIndex >= 0 && finalIndex !== currentImageIndex) {
+        setCurrentImageIndex(finalIndex);
+      }
     }
-  }, [onScroll]);
+  }, [currentImageIndex]);
 
   if (!visible) {
     return null;
@@ -231,7 +254,7 @@ function ImageViewing({
           )}
           onMomentumScrollEnd={onMomentumScrollEnd}
           onScroll={onScrollHandler}
-          scrollEventThrottle={8} // Use a more frequent update for smoother tracking
+          scrollEventThrottle={8}
           maintainVisibleContentPosition={{
             minIndexForVisible: 0,
             autoscrollToTopThreshold: 10,
