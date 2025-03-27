@@ -19,16 +19,34 @@ const SCREEN_HEIGHT = SCREEN.height;
 const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPress, swipeToCloseEnabled = true, doubleTapToZoomEnabled = true, currentImageIndex, }) => {
     const imageContainer = useRef(null);
     const [imageLayout, setImageLayout] = useState(null);
-    // Since useImageDimensions is unreliable on Android, use a different approach
-    // We'll determine orientation when the image is loaded and has layout dimensions
-    // Default to a middle ground ratio initially
-    const isImageLandscape = imageLayout ? imageLayout.width > imageLayout.height : false;
-    // Apply fixed aspect ratios based on the image's determined orientation
-    // If width > height: use 3:2 aspect ratio
-    // If width <= height: use 2:3 aspect ratio
+    // Try to get dimensions directly from the imageSrc if it's a URI source
+    const sourceWidth = typeof imageSrc !== 'number' && 'width' in imageSrc ? imageSrc.width : undefined;
+    const sourceHeight = typeof imageSrc !== 'number' && 'height' in imageSrc ? imageSrc.height : undefined;
+    console.log("Source dimensions:", { width: sourceWidth, height: sourceHeight });
+    // Determine if image is landscape based on source dimensions, fallback to layout dimensions
+    let isImageLandscape = false;
+    if (sourceWidth && sourceHeight) {
+        // Use dimensions from source if available
+        isImageLandscape = sourceWidth > sourceHeight;
+    }
+    else if (imageLayout) {
+        // Fallback to layout dimensions if source dimensions are not available
+        isImageLandscape = imageLayout.width > imageLayout.height;
+    }
+    // Calculate dimensions based on the available information
+    let aspectRatio = 1; // Default 1:1 aspect ratio
+    if (sourceWidth && sourceHeight) {
+        // Use exact aspect ratio from source
+        aspectRatio = sourceWidth / sourceHeight;
+    }
+    else if (imageLayout) {
+        // Use aspect ratio from layout
+        aspectRatio = imageLayout.width / imageLayout.height;
+    }
+    // Apply screen constraints while maintaining aspect ratio
     const imageDimensions = isImageLandscape
-        ? { width: SCREEN_WIDTH, height: SCREEN_WIDTH * (2 / 3) }
-        : { width: SCREEN_HEIGHT * (2 / 3), height: SCREEN_HEIGHT };
+        ? { width: SCREEN_WIDTH, height: SCREEN_WIDTH / aspectRatio }
+        : { width: SCREEN_HEIGHT * aspectRatio, height: SCREEN_HEIGHT };
     const [translate, scale] = getImageTransform(imageDimensions, SCREEN);
     const scrollValueY = new Animated.Value(0);
     const [isLoaded, setLoadEnd] = useState(false);
