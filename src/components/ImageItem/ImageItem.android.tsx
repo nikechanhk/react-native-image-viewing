@@ -17,7 +17,11 @@ import {
   NativeSyntheticEvent,
   NativeMethodsMixin,
   ScaledSize,
-  TouchableWithoutFeedback,
+  TouchableOpacity,
+  PanResponder,
+  PanResponderInstance,
+  GestureResponderEvent,
+  PanResponderGestureState,
 } from "react-native";
 
 import usePanResponder from "../../hooks/usePanResponder";
@@ -165,45 +169,46 @@ const ImageItem = ({
         }
   };
 
+  // 直接设置单击事件处理的耐心和简化版的handleSingleTap函数
+  // 其实未使用自定义PanResponder，而是直接使用TouchableOpacity
+  // 简化处理流程以优先确保单击显示/隐藏header和footer功能正常
+
   return (
     <View style={styles.container}>
-      {/* 最外层透明点击层，用于捕获单击事件 */}
-      <TouchableWithoutFeedback onPress={handleSingleTap}>
-        <View 
-          pointerEvents="box-only" 
+      {/* 套层布局 */}
+      <View style={styles.centerContainer}>
+        {/* 这个覆盖层只处理点击 */}
+        <TouchableOpacity 
+          activeOpacity={1.0}
+          onPress={handleSingleTap} 
           style={{
             position: 'absolute',
             top: 0,
             left: 0,
-            width: layout.width,
-            height: layout.height,
-            zIndex: 1, // 设置较低的 zIndex 确保不影响其他手势
-            backgroundColor: 'transparent'
-          }} />
-      </TouchableWithoutFeedback>
-      
-      <View style={styles.centerContainer}>
+            width: '100%',
+            height: '100%',
+            zIndex: 100, // 确保在最上层
+          }}
+        >
+          <View style={{ width: '100%', height: '100%' }} />
+        </TouchableOpacity>
+
         <ScrollView
           ref={imageContainer}
           style={styles.listItem}
           pagingEnabled
-          nestedScrollEnabled
+          nestedScrollEnabled={false} // 禁用嵌套滚动确保手势正确处理
           showsHorizontalScrollIndicator={false}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.imageScrollContainer}
-          scrollEnabled={true} // 始终启用滚动以确保可以上下滚动
+          scrollEnabled={true} // 始终启用滚动
           {...(swipeToCloseEnabled && {
             onScroll,
             onScrollEndDrag,
           })}
         >
           <View style={{ height: layout.height }} />
-          {/* 恢复手势处理器以支持缩放 */}
-          <Animated.View
-            {...panHandlers}
-            style={[imageStylesWithOpacity, { zIndex: 5 }]}
-            collapsable={false}
-          >
+          <Animated.View style={{ width: layout.width, height: layout.height }}>
             <ExpoImage
               source={imageSrc}
               style={{
