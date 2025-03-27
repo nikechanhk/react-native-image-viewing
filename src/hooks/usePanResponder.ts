@@ -356,8 +356,9 @@ const usePanResponder = ({
       if (isSimpleTap && onSingleTap) {
         // 延遲處理單擊事件，等待可能的雙擊
         setTimeout(() => {
-          // 確保這不是雙擊的一部分
-          if (lastTapTS && (tapTS - lastTapTS) > DOUBLE_TAP_DELAY) {
+          // 修正：如果沒有最近的點擊記錄或者當前點擊不是雙擊的一部分就觸發單擊
+          // 兩種情況：1. 首次點擊 (lastTapTS 不存在) 2. 兩次點擊間隔超過雙擊時間
+          if (!lastTapTS || (tapTS - lastTapTS) > DOUBLE_TAP_DELAY) {
             onSingleTap();
           }
         }, DOUBLE_TAP_DELAY + 10);
