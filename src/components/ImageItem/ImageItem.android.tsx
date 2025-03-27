@@ -56,17 +56,14 @@ const ImageItem = ({
   currentImageIndex,
 }: Props) => {
   const imageContainer = useRef<ScrollView & NativeMethodsMixin>(null);
-  const originalDimensions = useImageDimensions(imageSrc);
-  console.log("originalDimensions", originalDimensions);
+  const [imageLayout, setImageLayout] = useState<{ width: number; height: number } | null>(null);
   
-  // Get image orientation based on original dimensions
-  // If dimensions are unavailable, default to a reasonable size
-  let isImageLandscape = false;
-  if (originalDimensions && originalDimensions.width > 0 && originalDimensions.height > 0) {
-    isImageLandscape = originalDimensions.width > originalDimensions.height;
-  }
+  // Since useImageDimensions is unreliable on Android, use a different approach
+  // We'll determine orientation when the image is loaded and has layout dimensions
+  // Default to a middle ground ratio initially
+  const isImageLandscape = imageLayout ? imageLayout.width > imageLayout.height : false;
   
-  // Apply fixed aspect ratios based on the image's actual orientation
+  // Apply fixed aspect ratios based on the image's determined orientation
   // If width > height: use 3:2 aspect ratio
   // If width <= height: use 2:3 aspect ratio
   const imageDimensions = isImageLandscape
@@ -176,7 +173,7 @@ const ImageItem = ({
             alignItems: "center",
             zIndex: -1,
         }}>
-            {(isLoaded || (originalDimensions && originalDimensions.width > 0)) && <ImageLoading />}
+            {isLoaded && <ImageLoading />}
         </View>
         <ExpoImage
           source={imageSrc}
@@ -184,7 +181,16 @@ const ImageItem = ({
             width: "100%",
             height: "100%",
           }}
-          onLoad={onLoaded}
+          onLoad={() => {
+            onLoaded();
+            // For image dimensions, we'll rely on onLayout
+          }}
+          onLayout={(event: { nativeEvent: { layout: { width: number; height: number } } }) => {
+            const { width, height } = event.nativeEvent.layout;
+            if (width > 0 && height > 0) {
+              setImageLayout({ width, height });
+            }
+          }}
         />
       </Animated.View>
     </ScrollView>
