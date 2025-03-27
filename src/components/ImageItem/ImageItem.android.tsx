@@ -15,26 +15,20 @@ import {
   StyleSheet,
   NativeScrollEvent,
   NativeSyntheticEvent,
-  NativeMethodsMixin,
-  Dimensions,
   TouchableWithoutFeedback,
   GestureResponderEvent,
   PanResponder,
-  TouchableOpacity,
 } from "react-native";
 
 import useImageDimensions from "../../hooks/useImageDimensions";
-
-import { getImageStyles, getImageTransform } from "../../utils";
-import { ImageSource } from "../../@types";
 import { ImageLoading } from "./ImageLoading";
 import { Props } from "./ImageItem.d";
-
 import { Image as ExpoImage } from "expo-image";
 
-const SWIPE_CLOSE_OFFSET = 75;
+// Constants
 const SWIPE_CLOSE_VELOCITY = 1.75;
-const DOUBLE_TAP_DELAY = 300; // ms
+const MAX_SCALE = 3;  // Maximum zoom level
+const MIN_SCALE = 1;  // Minimum zoom level
 
 const ImageItem = ({
   imageSrc,
@@ -43,15 +37,13 @@ const ImageItem = ({
   onLongPress,
   delayLongPress,
   swipeToCloseEnabled = true,
-  doubleTapToZoomEnabled = true,
   currentImageIndex,
   layout,
   onSingleTap,
 }: Props) => {
-  // Refs
-  const scrollViewRef = useRef<ScrollView & NativeMethodsMixin>(null);
-  const doubleTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastTapTimeRef = useRef<number>(0);
+  // Refs for handling pinch state
+  const scrollViewRef = useRef<ScrollView & { setNativeProps?: Function }>(null);
+  const pinchStateRef = useRef<{initialDistance?: number; initialScale?: number}>({}); 
   
   // State
   const [isLoaded, setIsLoaded] = useState(false);
@@ -68,99 +60,50 @@ const ImageItem = ({
     ? (layout.width * (imageDimensions.height / imageDimensions.width))
     : layout.height * 0.8;
   
-  // For swipe to close functionality
-  const scrollValueY = new Animated.Value(0);
-  
   // Handle image load completion
   const onImageLoaded = useCallback(() => {
-    console.log('[Android] Image loaded');
     setIsLoaded(true);
   }, []);
 
   // Toggle zoom state
   const toggleZoom = useCallback((zoomed: boolean) => {
-    console.log('[Android] Zoom changed to:', zoomed);
     setIsZoomed(zoomed);
     onZoom(zoomed);
     
     // Update scroll enabled state
-    if (scrollViewRef.current) {
+    if (scrollViewRef.current && scrollViewRef.current.setNativeProps) {
       scrollViewRef.current.setNativeProps({
         scrollEnabled: !zoomed
       });
     }
   }, [onZoom]);
   
-  // Reset on orientation change
+  // Reset on orientation change or image change
   useEffect(() => {
-    console.log('[Android] Layout changed, resetting zoom');
+    // Reset zoom state, scale and position
     toggleZoom(false);
     setScale(1);
     setTranslateX(0);
     setTranslateY(0);
     
+    // Reset scroll position to center
     if (scrollViewRef.current) {
       scrollViewRef.current.scrollTo({ y: layout.height, animated: false });
     }
-  }, [layout.width, layout.height]);
+  }, [layout.width, layout.height, currentImageIndex]);
   
   // Handle long press
   const handleLongPress = useCallback(() => {
     onLongPress(imageSrc);
   }, [imageSrc, onLongPress]);
-  // Handle tap events (single & double)
-  const handleTap = useCallback((event: GestureResponderEvent) => {
-    const now = Date.now();
-    const DOUBLE_TAP_THRESHOLD = 300;
-    
-    // Check if this is a double tap
-    if (now - lastTapTimeRef.current < DOUBLE_TAP_THRESHOLD) {
-      console.log('[Android] Double-tap detected');
-      
-      // Toggle zoom
-      if (doubleTapToZoomEnabled) {
-        const newZoomState = !isZoomed;
-        toggleZoom(newZoomState);
-        if (newZoomState) {
-          setScale(2); // Zoom in on double tap
-        } else {
-          setScale(1); // Reset zoom on second double tap
-        }
-      }
-    } else {
-      // This is a single tap (with delay to ensure it's not a double tap)
-      setTimeout(() => {
-        if (now - lastTapTimeRef.current >= DOUBLE_TAP_THRESHOLD) {
-          console.log('[Android] Single-tap confirmed');
-          if (onSingleTap) {
-            onSingleTap();
-          }
-        }
-      }, DOUBLE_TAP_THRESHOLD);
-    }
-    
-    lastTapTimeRef.current = now;
-  }, [doubleTapToZoomEnabled, isZoomed, onSingleTap]);
   
-  // Handle scroll events for swipe-to-close
-  const onScroll = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      if (swipeToCloseEnabled) {
-        const offsetY = event.nativeEvent.contentOffset.y;
-        scrollValueY.setValue(offsetY);
-        
-        // Check for swipe-to-close threshold
-        if (
-          offsetY > layout.height + layout.height / 2 ||
-          offsetY < layout.height - layout.height / 2
-        ) {
-          onRequestClose();
-        }
-      }
-    },
-    [layout.height, swipeToCloseEnabled, onRequestClose, scrollValueY]
-  );
-
+  // Handle tap (simplified to just call onSingleTap)
+  const handleTap = useCallback(() => {
+    if (onSingleTap) {
+      onSingleTap();
+    }
+  }, [onSingleTap]);
+  
   // Handle scroll end for swipe-to-close
   const onScrollEndDrag = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -169,81 +112,96 @@ const ImageItem = ({
       const offsetY = event.nativeEvent.contentOffset.y;
       const velocityY = Math.abs(event.nativeEvent.velocity?.y || 0);
       
-      if (
-        velocityY > SWIPE_CLOSE_VELOCITY &&
-        (offsetY > layout.height + SWIPE_CLOSE_OFFSET || 
-         offsetY < layout.height - SWIPE_CLOSE_OFFSET)
-      ) {
+      // Close the viewer if we've scrolled far enough with enough velocity
+      if (velocityY > SWIPE_CLOSE_VELOCITY && 
+          (offsetY < layout.height * 0.6 || offsetY > layout.height * 1.4)) {
         onRequestClose();
-      } else if (scrollViewRef.current) {
-        // Return to center position if not closing
-        scrollViewRef.current.scrollTo({ y: layout.height, animated: true });
+        return;
+      }
+      
+      // Reset to center position if not closing
+      if (scrollViewRef.current) {
+        scrollViewRef.current.scrollTo({
+          y: layout.height,
+          animated: true,
+        });
       }
     },
     [layout.height, swipeToCloseEnabled, onRequestClose]
   );
   
-  // Set up pan responder for pinch zoom
+  // Set up pan responder for pinch zoom - simplified for reliability
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
+      // Only start handling on touch
+      onStartShouldSetPanResponder: (evt) => {
+        return evt.nativeEvent.touches.length === 2; // Only for pinch gesture
+      },
       onStartShouldSetPanResponderCapture: () => false,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        // Only capture for multi-touch or significant movement
+      
+      // Take over when we have a two-finger gesture or single finger in zoomed state
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
         return gestureState.numberActiveTouches === 2 || 
-               Math.abs(gestureState.dx) > 10 || 
-               Math.abs(gestureState.dy) > 10;
+               (isZoomed && gestureState.numberActiveTouches === 1);
       },
       onMoveShouldSetPanResponderCapture: () => false,
       
-      onPanResponderGrant: () => {
-        // Start of gesture
+      // Initialize gesture state
+      onPanResponderGrant: (evt) => {
+        // Store current scale when starting gesture
+        pinchStateRef.current.initialScale = scale;
+        pinchStateRef.current.initialDistance = undefined;
       },
       
-      onPanResponderMove: (event, gestureState) => {
-        // Handle pinch to zoom with two fingers
+      // Handle pinch and pan gestures
+      onPanResponderMove: (evt, gestureState) => {
+        // PINCH TO ZOOM with two fingers
         if (gestureState.numberActiveTouches === 2) {
-          const touches = event.nativeEvent.touches;
+          const touches = evt.nativeEvent.touches;
           if (touches && touches.length >= 2) {
-            // Calculate distance between touches
             const touch1 = touches[0];
             const touch2 = touches[1];
             
-            if (touch1 && touch2) {
-              const currentDistance = Math.sqrt(
-                Math.pow(touch1.pageX - touch2.pageX, 2) +
-                Math.pow(touch1.pageY - touch2.pageY, 2)
-              );
-              
-              // Update scale based on pinch distance
-              if ((gestureState as any).previousPinchDistance) {
-                const scaleChange = currentDistance / (gestureState as any).previousPinchDistance;
-                const newScale = Math.min(Math.max(scale * scaleChange, 1), 3);
-                setScale(newScale);
-                
-                // When zoomed, allow panning
-                if (newScale > 1) {
-                  toggleZoom(true);
-                } else {
-                  toggleZoom(false);
-                }
-              }
-              
-              // Save for next comparison
-              (gestureState as any).previousPinchDistance = currentDistance;
+            // Calculate distance between touches
+            const currentDistance = Math.sqrt(
+              Math.pow(touch1.pageX - touch2.pageX, 2) +
+              Math.pow(touch1.pageY - touch2.pageY, 2)
+            );
+            
+            // Set initial distance if not set
+            if (!pinchStateRef.current.initialDistance) {
+              pinchStateRef.current.initialDistance = currentDistance;
+              return;
             }
+            
+            // Calculate scale change
+            const initialDistance = pinchStateRef.current.initialDistance;
+            const initialScale = pinchStateRef.current.initialScale || 1;
+            
+            // Apply scale with limits
+            const newScale = Math.min(
+              Math.max(initialScale * (currentDistance / initialDistance), MIN_SCALE), 
+              MAX_SCALE
+            );
+            
+            setScale(newScale);
+            
+            // Update zoom state
+            toggleZoom(newScale > 1);
           }
-        } 
-        // Handle panning when zoomed
+        }
+        // PANNING with one finger when zoomed
         else if (isZoomed && gestureState.numberActiveTouches === 1) {
-          setTranslateX(prev => prev + gestureState.dx / scale);
-          setTranslateY(prev => prev + gestureState.dy / scale);
+          // Use more sensitive handling for panning (divide by a factor)
+          setTranslateX(prev => prev + gestureState.dx / 10);
+          setTranslateY(prev => prev + gestureState.dy / 10);
         }
       },
       
+      // End of gesture
       onPanResponderRelease: () => {
-        // End of gesture - we don't need to do anything special here
-        // previousPinchDistance will be reset on the next gesture start
+        // Reset pinch state
+        pinchStateRef.current = {};
       }
     })
   ).current;
@@ -261,10 +219,7 @@ const ImageItem = ({
         showsHorizontalScrollIndicator={false}
         showsVerticalScrollIndicator={false}
         scrollEnabled={!isZoomed}  // Disable scroll when zoomed to allow panning
-        {...(swipeToCloseEnabled && {
-          onScroll,
-          onScrollEndDrag,
-        })}
+        onScrollEndDrag={swipeToCloseEnabled ? onScrollEndDrag : undefined}
         scrollEventThrottle={16}
       >
         {/* Top spacer for vertical scrolling */}
@@ -287,7 +242,7 @@ const ImageItem = ({
             delayLongPress={delayLongPress}
           >
             <View style={styles.imageContainer}>
-              {/* Main image */}
+              {/* Main image with transform for zoom and pan */}
               <Animated.View
                 style={{
                   width: layout.width,
