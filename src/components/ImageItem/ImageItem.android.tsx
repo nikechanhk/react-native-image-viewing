@@ -6,17 +6,12 @@
  *
  */
 
-import React, { useCallback, useRef, useState, useEffect } from "react";
+import React, { useCallback, useRef, useState } from "react";
 
 import {
   View,
   Animated,
-  ScrollView,
   StyleSheet,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  TouchableWithoutFeedback,
-  GestureResponderEvent,
   PanResponder,
 } from "react-native";
 
@@ -26,59 +21,36 @@ import { Props } from "./ImageItem.d";
 import { Image as ExpoImage } from "expo-image";
 
 // Constants
-const SWIPE_CLOSE_VELOCITY = 1.75;
 const MAX_SCALE = 3;  // Maximum zoom level
 const MIN_SCALE = 1;  // Minimum zoom level
 
 const ImageItem = ({
   imageSrc,
   onZoom,
-  onRequestClose,
   onLongPress,
   delayLongPress,
-  swipeToCloseEnabled = true,
   currentImageIndex,
   layout,
   onSingleTap,
 }: Props) => {
-  // Refs
-  const scrollViewRef = useRef<ScrollView & { setNativeProps?: Function }>(null);
-  
   // Animated values for transformations
-  const scaleValue = useRef(new Animated.Value(1)).current as Animated.Value;
-  const translateXValue = useRef(new Animated.Value(0)).current as Animated.Value;
-  const translateYValue = useRef(new Animated.Value(0)).current as Animated.Value;
-  
-  // Use direct refs to track values without addListener which can cause flickering
-  const currentScale = useRef(1);
-  const currentTranslateX = useRef(0);
-  const currentTranslateY = useRef(0);
-  
-  // Helper function to update values in a synchronized way
-  const updateTransformValues = useCallback((scale: number, translateX: number, translateY: number) => {
-    // Update our refs first
-    currentScale.current = scale;
-    currentTranslateX.current = translateX;
-    currentTranslateY.current = translateY;
-    
-    // Then update the animated values
-    scaleValue.setValue(scale);
-    translateXValue.setValue(translateX);
-    translateYValue.setValue(translateY);
-  }, [scaleValue, translateXValue, translateYValue]);
+  const scale = useRef(new Animated.Value(1)).current;
+  const translateX = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(0)).current;
   
   // State
   const [isLoaded, setIsLoaded] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
   
-  // Gesture state references
-  const gestureStateRef = useRef({
+  // Gesture state references for touch handling
+  const gestureState = useRef({
     lastScale: 1,
     lastTranslateX: 0,
     lastTranslateY: 0,
     initialTouchDistance: 0,
     initialTouchX: 0,
     initialTouchY: 0,
+    pinchTouches: [] as any[],
   });
   
   // Get image dimensions
@@ -94,50 +66,28 @@ const ImageItem = ({
     setIsLoaded(true);
   }, []);
 
-  // Toggle zoom state
-  const toggleZoom = useCallback((zoomed: boolean) => {
-    if (isZoomed !== zoomed) {
-      setIsZoomed(zoomed);
-      onZoom(zoomed);
-      
-      // Disable scroll when zoomed to prevent conflicts with panning
-      if (scrollViewRef.current && scrollViewRef.current.setNativeProps) {
-        scrollViewRef.current.setNativeProps({
-          scrollEnabled: !zoomed
-        });
-      }
+  // Update zoom state
+  const updateZoomState = useCallback((newScale: number) => {
+    const wasZoomed = isZoomed;
+    const nowZoomed = newScale > 1.05;
+    
+    if (wasZoomed !== nowZoomed) {
+      setIsZoomed(nowZoomed);
+      if (onZoom) onZoom(nowZoomed);
     }
   }, [isZoomed, onZoom]);
   
-  // Reset everything when image changes or orientation changes
-  useEffect(() => {
-    // Reset all transformations
-    scaleValue.setValue(1);
-    translateXValue.setValue(0);
-    translateYValue.setValue(0);
-    
-    // Reset gesture state
-    gestureStateRef.current = {
-      lastScale: 1,
-      lastTranslateX: 0,
-      lastTranslateY: 0,
-      initialTouchDistance: 0,
-      initialTouchX: 0,
-      initialTouchY: 0,
-    };
-    
-    // Update zoom state
-    toggleZoom(false);
-    
-    // Reset scroll position to center
-    if (scrollViewRef.current) {
-      scrollViewRef.current.scrollTo({ y: layout.height, animated: false });
-    }
-  }, [layout.width, layout.height, currentImageIndex, scaleValue, translateXValue, translateYValue, toggleZoom]);
+  // Function to calculate distance between two touch points
+  const calculateDistance = (touches: any[]) => {
+    if (touches.length < 2) return 0;
+    const dx = touches[1].pageX - touches[0].pageX;
+    const dy = touches[1].pageY - touches[0].pageY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
   
   // Handle long press
   const handleLongPress = useCallback(() => {
-    onLongPress(imageSrc);
+    if (onLongPress) onLongPress(imageSrc);
   }, [imageSrc, onLongPress]);
   
   // Handle tap
@@ -147,239 +97,159 @@ const ImageItem = ({
     }
   }, [onSingleTap]);
   
-  // Handle scroll end for swipe-to-close
-  const onScrollEndDrag = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      if (!swipeToCloseEnabled) return;
-      
-      const offsetY = event.nativeEvent.contentOffset.y;
-      const velocityY = Math.abs(event.nativeEvent.velocity?.y || 0);
-      
-      // Close the viewer if we've scrolled far enough with enough velocity
-      if (velocityY > SWIPE_CLOSE_VELOCITY && 
-          (offsetY < layout.height * 0.6 || offsetY > layout.height * 1.4)) {
-        onRequestClose();
-        return;
-      }
-      
-      // Reset to center position if not closing
-      if (scrollViewRef.current) {
-        scrollViewRef.current.scrollTo({
-          y: layout.height,
-          animated: true,
-        });
-      }
-    },
-    [layout.height, swipeToCloseEnabled, onRequestClose]
-  );
-  
-  // Set up pan responder for touch handling
+  // Simple pan responder for handling gestures
   const panResponder = useRef(
     PanResponder.create({
-      // Capture all touch starts
+      // Capture all touches
       onStartShouldSetPanResponder: () => true,
       
-      // Begin handling gestures when we have multi-touch or when zoomed
-      onMoveShouldSetPanResponder: (evt, gestureState) => {
-        const isMultiTouch = gestureState.numberActiveTouches >= 2;
-        const isPanningWhenZoomed = isZoomed && Math.abs(gestureState.dx) > 2;
-        
-        return isMultiTouch || isPanningWhenZoomed;
+      // Only handle when zoomed or multi-touch
+      onMoveShouldSetPanResponder: (_, gs) => {
+        return gs.numberActiveTouches >= 2 || (isZoomed && gs.numberActiveTouches === 1);
       },
       
-      // When gesture begins
+      // When gesture starts
       onPanResponderGrant: (evt) => {
         const touches = evt.nativeEvent.touches;
         
-        // Store current transformation values using our tracked refs
-        gestureStateRef.current.lastScale = currentScale.current;
-        gestureStateRef.current.lastTranslateX = currentTranslateX.current;
-        gestureStateRef.current.lastTranslateY = currentTranslateY.current;
+        // Store current values
+        scale.stopAnimation();
+        translateX.stopAnimation();
+        translateY.stopAnimation();
         
-        // For pinch gesture, store initial touch positions
+        scale.extractOffset();
+        translateX.extractOffset();
+        translateY.extractOffset();
+        
+        // Set reference values
+        gestureState.current.lastScale = 1;
+        gestureState.current.lastTranslateX = 0;
+        gestureState.current.lastTranslateY = 0;
+        
+        // For pinch
         if (touches.length >= 2) {
+          gestureState.current.pinchTouches = touches;
+          gestureState.current.initialTouchDistance = calculateDistance(touches);
+          
+          // Store center point
           const touch1 = touches[0];
           const touch2 = touches[1];
-          
-          // Calculate distance between touches for pinch
-          gestureStateRef.current.initialTouchDistance = Math.sqrt(
-            Math.pow(touch2.pageX - touch1.pageX, 2) + 
-            Math.pow(touch2.pageY - touch1.pageY, 2)
-          );
-          
-          // Calculate center point between touches for pan during pinch
-          gestureStateRef.current.initialTouchX = (touch1.pageX + touch2.pageX) / 2;
-          gestureStateRef.current.initialTouchY = (touch1.pageY + touch2.pageY) / 2;
+          gestureState.current.initialTouchX = (touch1.pageX + touch2.pageX) / 2;
+          gestureState.current.initialTouchY = (touch1.pageY + touch2.pageY) / 2;
         }
       },
       
-      // Handle the touch movement
-      onPanResponderMove: (evt, gestureState) => {
+      // During gesture
+      onPanResponderMove: (evt, gs) => {
         const touches = evt.nativeEvent.touches;
         
-        // PINCH - Handle two finger gesture for zooming
+        // PINCH ZOOM
         if (touches.length >= 2) {
+          const currentDistance = calculateDistance(touches);
+          const initialDistance = gestureState.current.initialTouchDistance;
+          
+          if (initialDistance === 0) return;
+          
+          // Calculate new scale
+          let newScale = currentDistance / initialDistance;
+          newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, newScale));
+          
+          // Apply scale
+          scale.setValue(newScale);
+          
+          // Handle panning during pinch
           const touch1 = touches[0];
           const touch2 = touches[1];
-          
-          // Calculate current touch distance
-          const currentTouchDistance = Math.sqrt(
-            Math.pow(touch2.pageX - touch1.pageX, 2) + 
-            Math.pow(touch2.pageY - touch1.pageY, 2)
-          );
-          
-          // Calculate scale change
-          const initialTouchDistance = gestureStateRef.current.initialTouchDistance;
-          let newScale = gestureStateRef.current.lastScale * (currentTouchDistance / initialTouchDistance);
-          
-          // Apply scale limits
-          newScale = Math.min(Math.max(newScale, MIN_SCALE), MAX_SCALE);
-          
-          // Calculate current touch center point
           const currentTouchX = (touch1.pageX + touch2.pageX) / 2;
           const currentTouchY = (touch1.pageY + touch2.pageY) / 2;
           
-          // Calculate translation changes including scaling effect
-          const dx = (currentTouchX - gestureStateRef.current.initialTouchX) / gestureStateRef.current.lastScale;
-          const dy = (currentTouchY - gestureStateRef.current.initialTouchY) / gestureStateRef.current.lastScale;
+          const dx = currentTouchX - gestureState.current.initialTouchX;
+          const dy = currentTouchY - gestureState.current.initialTouchY;
           
-          // Calculate new translation values
-          const newTranslateX = gestureStateRef.current.lastTranslateX + dx;
-          const newTranslateY = gestureStateRef.current.lastTranslateY + dy;
+          translateX.setValue(dx / 2);
+          translateY.setValue(dy / 2);
           
-          // Update our refs first to avoid locking issues
-          currentScale.current = newScale;
-          currentTranslateX.current = newTranslateX;
-          currentTranslateY.current = newTranslateY;
-          
-          // Batch all Animated.Value updates to reduce flickering
-          requestAnimationFrame(() => {
-            scaleValue.setValue(newScale);
-            translateXValue.setValue(newTranslateX);
-            translateYValue.setValue(newTranslateY);
-          });
-          
-          // Update zoom state based on scale
-          toggleZoom(newScale > 1.01);  // Use a small threshold
+          // Update zoom state
+          updateZoomState(newScale);
         }
-        // PAN - Handle one finger gesture for panning when zoomed
+        // SINGLE FINGER PAN WHEN ZOOMED
         else if (isZoomed && touches.length === 1) {
-          // Calculate new position values
-          const dx = gestureState.dx / gestureStateRef.current.lastScale;
-          const dy = gestureState.dy / gestureStateRef.current.lastScale;
-          
-          // Calculate new translation values
-          const newTranslateX = gestureStateRef.current.lastTranslateX + dx;
-          const newTranslateY = gestureStateRef.current.lastTranslateY + dy;
-          
-          // Update our refs first to avoid locking issues
-          currentTranslateX.current = newTranslateX;
-          currentTranslateY.current = newTranslateY;
-          
-          // Batch updates to reduce flickering
-          requestAnimationFrame(() => {
-            translateXValue.setValue(newTranslateX);
-            translateYValue.setValue(newTranslateY);
-          });
+          // Apply translation
+          translateX.setValue(gs.dx / 2);
+          translateY.setValue(gs.dy / 2);
         }
       },
       
-      // When touch ends
+      // End of gesture
       onPanResponderRelease: () => {
-        // Store final transformation values using our tracked refs
-        gestureStateRef.current.lastScale = currentScale.current;
-        gestureStateRef.current.lastTranslateX = currentTranslateX.current;
-        gestureStateRef.current.lastTranslateY = currentTranslateY.current;
+        // Commit offsets
+        scale.flattenOffset();
+        translateX.flattenOffset();
+        translateY.flattenOffset();
         
-        // If scale is close to 1, snap back to exactly 1 and reset position
-        if (gestureStateRef.current.lastScale < 1.05) {
-          // Update our refs first
-          currentScale.current = 1;
-          currentTranslateX.current = 0;
-          currentTranslateY.current = 0;
-          
-          // Batch updates to reduce flickering
-          requestAnimationFrame(() => {
-            scaleValue.setValue(1);
-            translateXValue.setValue(0);
-            translateYValue.setValue(0);
-          });
-          
-          // Update gesture state
-          gestureStateRef.current.lastScale = 1;
-          gestureStateRef.current.lastTranslateX = 0;
-          gestureStateRef.current.lastTranslateY = 0;
-          
-          // Update zoom state
-          toggleZoom(false);
+        // Check if we need to reset to default scale
+        let currentScaleVal = 1;
+        scale.addListener(({value}) => {
+          currentScaleVal = value;
+        });
+        
+        if (currentScaleVal < 1.05) {
+          Animated.parallel([
+          Animated.timing(scale, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(translateX, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(translateY, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          })
+        ]).start(() => {
+          updateZoomState(1);
+        });
         }
-      }
+      },
     })
   ).current;
 
   return (
     <View style={styles.container}>
-      {/* Image in scrollview for swipe-to-close and vertical scrolling */}
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollViewContent}
-        pagingEnabled
-        nestedScrollEnabled={true}
-        directionalLockEnabled={false}
-        showsHorizontalScrollIndicator={false}
-        showsVerticalScrollIndicator={false}
-        scrollEnabled={!isZoomed}  // Disable scroll when zoomed to allow panning
-        onScrollEndDrag={swipeToCloseEnabled ? onScrollEndDrag : undefined}
-        scrollEventThrottle={16}
+      <View 
+        style={{
+          width: layout.width,
+          height: layout.height,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#000',
+        }}
+        {...panResponder.panHandlers}
       >
-        {/* Top spacer for vertical scrolling */}
-        <View style={{ height: layout.height }} />
-        
-        {/* Main content area */}
-        <View
+        <Animated.View
           style={{
-            width: layout.width, 
-            height: Math.max(imageHeight, layout.height),
-            justifyContent: 'center',
-            alignItems: 'center',
+            width: layout.width,
+            height: imageHeight,
+            transform: [
+              { scale },
+              { translateX },
+              { translateY }
+            ]
           }}
-          {...panResponder.panHandlers}
         >
-          {/* Tap handler layer */}
-          <TouchableWithoutFeedback
-            onPress={handleTap}
-            onLongPress={handleLongPress}
-            delayLongPress={delayLongPress}
-          >
-            <View style={styles.imageContainer}>
-              {/* Main image with transform for zoom and pan */}
-              <Animated.View
-                style={{
-                  width: layout.width,
-                  height: imageHeight,
-                  transform: [
-                    { scale: scaleValue },
-                    { translateX: translateXValue },
-                    { translateY: translateYValue }
-                  ]
-                }}
-              >
-                <ExpoImage
-                  source={imageSrc}
-                  style={styles.image}
-                  contentFit="contain"
-                  contentPosition="center"
-                  onLoad={onImageLoaded}
-                />
-              </Animated.View>
-            </View>
-          </TouchableWithoutFeedback>
-        </View>
-        
-        {/* Bottom spacer for vertical scrolling */}
-        <View style={{ height: layout.height }} />
-      </ScrollView>
+          <ExpoImage
+            source={imageSrc}
+            style={styles.image}
+            contentFit="contain"
+            contentPosition="center"
+            onLoad={onImageLoaded}
+          />
+        </Animated.View>
+      </View>
       
       {/* Loading indicator */}
       {!isLoaded && <ImageLoading />}
@@ -390,27 +260,11 @@ const ImageItem = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    overflow: "hidden",
-  },
-  scrollView: {
-    width: "100%",
-    height: "100%",
-  },
-  scrollViewContent: {
-    // 300% height to allow content above and below for swipe to close
-    height: "300%",
-  },
-  imageContainer: {
-    flex: 1,
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: '#000',
   },
   image: {
-    flex: 1,
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
   },
 });
 
