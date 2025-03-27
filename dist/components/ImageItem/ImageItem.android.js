@@ -7,7 +7,6 @@
  */
 import React, { useCallback, useRef, useState, useEffect } from "react";
 import { View, Animated, ScrollView, Dimensions, StyleSheet, } from "react-native";
-import useImageDimensions from "../../hooks/useImageDimensions";
 import usePanResponder from "../../hooks/usePanResponder";
 import { getImageStyles, getImageTransform } from "../../utils";
 import { ImageLoading } from "./ImageLoading";
@@ -19,13 +18,13 @@ const SCREEN_WIDTH = SCREEN.width;
 const SCREEN_HEIGHT = SCREEN.height;
 const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPress, swipeToCloseEnabled = true, doubleTapToZoomEnabled = true, currentImageIndex, }) => {
     const imageContainer = useRef(null);
-    const originalDimensions = useImageDimensions(imageSrc);
-    const [layoutDimensions, setLayoutDimensions] = useState({ width: 0, height: 0 });
-    // Use dynamically loaded dimensions, but fall back to layout dimensions if original dimensions are zero
-    const imageDimensions = (!originalDimensions ||
-        (originalDimensions.width === 0 && originalDimensions.height === 0)) ?
-        (layoutDimensions.width > 0 && layoutDimensions.height > 0 ? layoutDimensions : { width: SCREEN_WIDTH, height: SCREEN_HEIGHT * 0.7 }) :
-        originalDimensions;
+    // Simplified dimensions logic using fixed aspect ratios
+    // If width > height: use 3:2 aspect ratio
+    // If width <= height: use 2:3 aspect ratio
+    const isLandscape = SCREEN_WIDTH > SCREEN_HEIGHT;
+    const imageDimensions = isLandscape
+        ? { width: SCREEN_WIDTH, height: SCREEN_WIDTH * (2 / 3) }
+        : { width: SCREEN_HEIGHT * (2 / 3), height: SCREEN_HEIGHT };
     const [translate, scale] = getImageTransform(imageDimensions, SCREEN);
     const scrollValueY = new Animated.Value(0);
     const [isLoaded, setLoadEnd] = useState(false);
@@ -84,12 +83,7 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
         onScrollEndDrag,
     })}>
       <View style={{ height: SCREEN_HEIGHT }}/>
-      <Animated.View {...panHandlers} style={imageStylesWithOpacity} onLayout={(event) => {
-            const { width, height } = event.nativeEvent.layout;
-            if (width > 0 && height > 0) {
-                setLayoutDimensions({ width, height });
-            }
-        }}>
+      <Animated.View {...panHandlers} style={imageStylesWithOpacity}>
         <View style={{
             position: "absolute",
             top: 0,
@@ -100,7 +94,7 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
             alignItems: "center",
             zIndex: -1,
         }}>
-            {(isLoaded || imageDimensions) && <ImageLoading />}
+            {isLoaded && <ImageLoading />}
         </View>
         <ExpoImage source={imageSrc} style={{
             width: "100%",
