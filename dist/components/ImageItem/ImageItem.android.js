@@ -7,6 +7,7 @@
  */
 import React, { useCallback, useRef, useState, useEffect } from "react";
 import { View, Animated, ScrollView, Dimensions, StyleSheet, } from "react-native";
+import useImageDimensions from "../../hooks/useImageDimensions";
 import usePanResponder from "../../hooks/usePanResponder";
 import { getImageStyles, getImageTransform } from "../../utils";
 import { ImageLoading } from "./ImageLoading";
@@ -18,10 +19,13 @@ const SCREEN_WIDTH = SCREEN.width;
 const SCREEN_HEIGHT = SCREEN.height;
 const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPress, swipeToCloseEnabled = true, doubleTapToZoomEnabled = true, currentImageIndex, }) => {
     const imageContainer = useRef(null);
-    const imageDimensions = {
-        width: 716,
-        height: 478,
-    };
+    const originalDimensions = useImageDimensions(imageSrc);
+    const [layoutDimensions, setLayoutDimensions] = useState({ width: 0, height: 0 });
+    // Use dynamically loaded dimensions, but fall back to layout dimensions if original dimensions are zero
+    const imageDimensions = (!originalDimensions ||
+        (originalDimensions.width === 0 && originalDimensions.height === 0)) ?
+        (layoutDimensions.width > 0 && layoutDimensions.height > 0 ? layoutDimensions : { width: SCREEN_WIDTH, height: SCREEN_HEIGHT * 0.7 }) :
+        originalDimensions;
     const [translate, scale] = getImageTransform(imageDimensions, SCREEN);
     const scrollValueY = new Animated.Value(0);
     const [isLoaded, setLoadEnd] = useState(false);
@@ -80,7 +84,12 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
         onScrollEndDrag,
     })}>
       <View style={{ height: SCREEN_HEIGHT }}/>
-      <Animated.View {...panHandlers} style={imageStylesWithOpacity}>
+      <Animated.View {...panHandlers} style={imageStylesWithOpacity} onLayout={(event) => {
+            const { width, height } = event.nativeEvent.layout;
+            if (width > 0 && height > 0) {
+                setLayoutDimensions({ width, height });
+            }
+        }}>
         <View style={{
             position: "absolute",
             top: 0,
