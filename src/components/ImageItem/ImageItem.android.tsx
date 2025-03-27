@@ -133,8 +133,7 @@ const ImageItem = ({
     ...imagesStyles, 
     opacity: 1,
     // 確保圖片元素至少有最小尺寸
-    width: imagesStyles.width || fallbackWidth,
-    height: imagesStyles.height || fallbackHeight,
+    width: layout.width,
   };
 
   const onScrollEndDrag = ({
@@ -203,9 +202,6 @@ const ImageItem = ({
             width: layout.width,
             height: layout.height,
             alignSelf: 'center',
-            // 確保圖片可見
-            minWidth: 100,
-            minHeight: 100,
           }}
           contentFit="contain"
           contentPosition="center"
@@ -241,8 +237,6 @@ const styles = StyleSheet.create({
   },
   imageScrollContainer: {
     height: "300%",
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });
 
