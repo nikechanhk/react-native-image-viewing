@@ -175,8 +175,8 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
             }
         },
         onPanResponderRelease: () => {
-            // End of gesture
-            delete PanResponder.gestureState.previousPinchDistance;
+            // End of gesture - we don't need to do anything special here
+            // previousPinchDistance will be reset on the next gesture start
         }
     })).current;
     return (<View style={styles.container}>

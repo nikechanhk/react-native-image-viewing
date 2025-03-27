@@ -242,8 +242,8 @@ const ImageItem = ({
       },
       
       onPanResponderRelease: () => {
-        // End of gesture
-        delete (PanResponder as any).gestureState.previousPinchDistance;
+        // End of gesture - we don't need to do anything special here
+        // previousPinchDistance will be reset on the next gesture start
       }
     })
   ).current;
