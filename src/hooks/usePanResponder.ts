@@ -43,6 +43,7 @@ type Props = {
   delayLongPress: number;
   currentImageIndex: number;
   layout: ScaledSize;
+  onSingleTap?: () => void; // 新增單擊事件回調
 };
 
 const usePanResponder = ({
@@ -54,6 +55,7 @@ const usePanResponder = ({
   delayLongPress,
   currentImageIndex,
   layout,
+  onSingleTap,
 }: Props): Readonly<
   [GestureResponderHandlers, Animated.Value, Animated.ValueXY]
 > => {
@@ -343,8 +345,23 @@ const usePanResponder = ({
         tmpTranslate = { x: nextTranslateX, y: nextTranslateY };
       }
     },
-    onRelease: () => {
+    onRelease: (event: GestureResponderEvent) => {
       cancelLongPressHandle();
+      
+      // 如果沒有縮放或移動，判斷是否為單擊
+      const isSimpleTap = !tmpScale && !tmpTranslate && !isDoubleTapPerformed;
+      const tapTS = Date.now();
+      
+      // 如果是單擊且有設置單擊回調，延遲執行以避免與雙擊衝突
+      if (isSimpleTap && onSingleTap) {
+        // 延遲處理單擊事件，等待可能的雙擊
+        setTimeout(() => {
+          // 確保這不是雙擊的一部分
+          if (lastTapTS && (tapTS - lastTapTS) > DOUBLE_TAP_DELAY) {
+            onSingleTap();
+          }
+        }, DOUBLE_TAP_DELAY + 10);
+      }
 
       if (isDoubleTapPerformed) {
         isDoubleTapPerformed = false;

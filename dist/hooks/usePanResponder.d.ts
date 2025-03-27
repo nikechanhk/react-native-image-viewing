@@ -16,6 +16,7 @@ type Props = {
     delayLongPress: number;
     currentImageIndex: number;
     layout: ScaledSize;
+    onSingleTap?: () => void;
 };
-declare const usePanResponder: ({ initialScale, initialTranslate, onZoom, doubleTapToZoomEnabled, onLongPress, delayLongPress, currentImageIndex, layout, }: Props) => Readonly<[GestureResponderHandlers, Animated.Value, Animated.ValueXY]>;
+declare const usePanResponder: ({ initialScale, initialTranslate, onZoom, doubleTapToZoomEnabled, onLongPress, delayLongPress, currentImageIndex, layout, onSingleTap, }: Props) => Readonly<[GestureResponderHandlers, Animated.Value, Animated.ValueXY]>;
 export default usePanResponder;

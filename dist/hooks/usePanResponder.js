@@ -15,7 +15,7 @@ const MIN_DIMENSION = Math.min(SCREEN_WIDTH, SCREEN_HEIGHT);
 const SCALE_MAX = 2;
 const DOUBLE_TAP_DELAY = 300;
 const OUT_BOUND_MULTIPLIER = 0.75;
-const usePanResponder = ({ initialScale, initialTranslate, onZoom, doubleTapToZoomEnabled, onLongPress, delayLongPress, currentImageIndex, layout, }) => {
+const usePanResponder = ({ initialScale, initialTranslate, onZoom, doubleTapToZoomEnabled, onLongPress, delayLongPress, currentImageIndex, layout, onSingleTap, }) => {
     let numberInitialTouches = 1;
     let initialTouches = [];
     let currentScale = initialScale;
@@ -223,8 +223,21 @@ const usePanResponder = ({ initialScale, initialTranslate, onZoom, doubleTapToZo
                 tmpTranslate = { x: nextTranslateX, y: nextTranslateY };
             }
         },
-        onRelease: () => {
+        onRelease: (event) => {
             cancelLongPressHandle();
+            // 如果沒有縮放或移動，判斷是否為單擊
+            const isSimpleTap = !tmpScale && !tmpTranslate && !isDoubleTapPerformed;
+            const tapTS = Date.now();
+            // 如果是單擊且有設置單擊回調，延遲執行以避免與雙擊衝突
+            if (isSimpleTap && onSingleTap) {
+                // 延遲處理單擊事件，等待可能的雙擊
+                setTimeout(() => {
+                    // 確保這不是雙擊的一部分
+                    if (lastTapTS && (tapTS - lastTapTS) > DOUBLE_TAP_DELAY) {
+                        onSingleTap();
+                    }
+                }, DOUBLE_TAP_DELAY + 10);
+            }
             if (isDoubleTapPerformed) {
                 isDoubleTapPerformed = false;
             }

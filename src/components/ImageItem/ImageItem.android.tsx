@@ -44,6 +44,7 @@ const ImageItem = ({
   doubleTapToZoomEnabled = true,
   currentImageIndex,
   layout,
+  onSingleTap,
 }: Props) => {
   const imageContainer = useRef<ScrollView & NativeMethodsMixin>(null);
   const imageDimensions = useImageDimensions(imageSrc) || { width: 0, height: 0 };
@@ -90,6 +91,17 @@ const ImageItem = ({
   const onLongPressHandler = useCallback(() => {
     onLongPress(imageSrc);
   }, [imageSrc, onLongPress]);
+  
+  // 跟踪點擊狀態，用於區分單擊和雙擊
+  const lastTapRef = useRef<number>(0);
+  const lastTapPositionRef = useRef<{ x: number, y: number } | null>(null);
+  
+  // 處理單擊事件，與 iOS 版本保持一致
+  const handleSingleTap = useCallback(() => {
+    if (onSingleTap) {
+      onSingleTap();
+    }
+  }, [onSingleTap]);
 
   const [panHandlers, scaleValue, translateValue] = usePanResponder({
     initialScale: scale || 1,
@@ -100,6 +112,7 @@ const ImageItem = ({
     delayLongPress,
     currentImageIndex,
     layout,
+    onSingleTap: handleSingleTap,
   });
 
   const imagesStyles = getImageStyles(

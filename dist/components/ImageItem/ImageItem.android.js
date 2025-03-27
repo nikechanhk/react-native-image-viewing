@@ -15,7 +15,7 @@ import { Image as ExpoImage } from "expo-image";
 const SWIPE_CLOSE_OFFSET = 75;
 const SWIPE_CLOSE_VELOCITY = 1.75;
 // Props type is now imported from ImageItem.d.ts
-const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPress, swipeToCloseEnabled = true, doubleTapToZoomEnabled = true, currentImageIndex, layout, }) => {
+const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPress, swipeToCloseEnabled = true, doubleTapToZoomEnabled = true, currentImageIndex, layout, onSingleTap, }) => {
     const imageContainer = useRef(null);
     const imageDimensions = useImageDimensions(imageSrc) || { width: 0, height: 0 };
     // Re-calculate transform when layout changes or image dimensions become available
@@ -54,6 +54,15 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
     const onLongPressHandler = useCallback(() => {
         onLongPress(imageSrc);
     }, [imageSrc, onLongPress]);
+    // 跟踪點擊狀態，用於區分單擊和雙擊
+    const lastTapRef = useRef(0);
+    const lastTapPositionRef = useRef(null);
+    // 處理單擊事件，與 iOS 版本保持一致
+    const handleSingleTap = useCallback(() => {
+        if (onSingleTap) {
+            onSingleTap();
+        }
+    }, [onSingleTap]);
     const [panHandlers, scaleValue, translateValue] = usePanResponder({
         initialScale: scale || 1,
         initialTranslate: translate || { x: 0, y: 0 },
@@ -63,6 +72,7 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
         delayLongPress,
         currentImageIndex,
         layout,
+        onSingleTap: handleSingleTap,
     });
     const imagesStyles = getImageStyles(imageDimensions, translateValue, scaleValue);
     const imageOpacity = scrollValueY.interpolate({
