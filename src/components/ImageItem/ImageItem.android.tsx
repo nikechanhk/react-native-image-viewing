@@ -124,7 +124,18 @@ const ImageItem = ({
     inputRange: [-SWIPE_CLOSE_OFFSET, 0, SWIPE_CLOSE_OFFSET],
     outputRange: [0.7, 1, 0.7],
   });
-  const imageStylesWithOpacity = { ...imagesStyles, opacity: 1 };
+  // 確保圖片有有效寬高，用作備份尺寸以防止原始尺寸為零
+  const fallbackWidth = layout.width; 
+  const fallbackHeight = layout.height;
+  
+  // 專門為 Android 調整圖片樣式，確保圖片始終可見
+  const imageStylesWithOpacity = { 
+    ...imagesStyles, 
+    opacity: 1,
+    // 確保圖片元素至少有最小尺寸
+    width: imagesStyles.width || fallbackWidth,
+    height: imagesStyles.height || fallbackHeight,
+  };
 
   const onScrollEndDrag = ({
     nativeEvent,
@@ -192,6 +203,9 @@ const ImageItem = ({
             width: layout.width,
             height: layout.height,
             alignSelf: 'center',
+            // 確保圖片可見
+            minWidth: 100,
+            minHeight: 100,
           }}
           contentFit="contain"
           contentPosition="center"
