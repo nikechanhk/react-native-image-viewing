@@ -7,7 +7,7 @@
  */
 // @ts-nocheck
 import React, { useCallback, useRef, useEffect, useState } from "react";
-import { Animated, Dimensions, StyleSheet, View, VirtualizedList, Modal, } from "react-native";
+import { Animated, Dimensions, StyleSheet, View, VirtualizedList, Modal, TouchableWithoutFeedback, } from "react-native";
 import ImageItem from "./components/ImageItem/ImageItem";
 import ImageDefaultHeader from "./components/ImageDefaultHeader";
 import StatusBarManager from "./components/StatusBarManager";
@@ -59,7 +59,11 @@ function ImageViewing({ images, keyExtractor, imageIndex, visible, onRequestClos
     }, [currentImageIndex]);
     // 切換控制元素（header 和 footer）顯示/隱藏
     const toggleControls = useCallback(() => {
-        setControlsVisible(prev => !prev);
+        console.log('toggleControls called');
+        setControlsVisible(prev => {
+            console.log('Changing controlsVisible from', prev, 'to', !prev);
+            return !prev;
+        });
     }, []);
     const onZoom = useCallback((isScaled) => {
         var _a;
@@ -74,7 +78,9 @@ function ImageViewing({ images, keyExtractor, imageIndex, visible, onRequestClos
     }
     return (<Modal transparent={presentationStyle === "overFullScreen"} visible={visible} presentationStyle={presentationStyle} animationType={animationType} onRequestClose={onRequestCloseEnhanced} supportedOrientations={["portrait", "landscape"]} hardwareAccelerated>
       <StatusBarManager presentationStyle={presentationStyle}/>
-      <View style={[styles.container, { opacity, backgroundColor }]}>
+      {/* 將整個容器用 TouchableWithoutFeedback 包裝，更簡單的方式處理點擊 */}
+      <TouchableWithoutFeedback onPress={toggleControls}>
+        <View style={[styles.container, { opacity, backgroundColor }]}>
         <Animated.View style={[
             styles.header,
             {
@@ -134,7 +140,8 @@ function ImageViewing({ images, keyExtractor, imageIndex, visible, onRequestClos
                 imageIndex: currentImageIndex,
             })}
           </Animated.View>)}
-      </View>
+        </View>
+      </TouchableWithoutFeedback>
     </Modal>);
 }
 const styles = StyleSheet.create({

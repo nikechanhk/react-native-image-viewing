@@ -115,7 +115,11 @@ function ImageViewing({
 
   // 切換控制元素（header 和 footer）顯示/隱藏
   const toggleControls = useCallback(() => {
-    setControlsVisible(prev => !prev);
+    console.log('toggleControls called');
+    setControlsVisible(prev => {
+      console.log('Changing controlsVisible from', prev, 'to', !prev);
+      return !prev;
+    });
   }, []);
 
   const onZoom = useCallback(
@@ -145,7 +149,9 @@ function ImageViewing({
       hardwareAccelerated
     >
       <StatusBarManager presentationStyle={presentationStyle} />
-      <View style={[styles.container, { opacity, backgroundColor }]}>
+      {/* 將整個容器用 TouchableWithoutFeedback 包裝，更簡單的方式處理點擊 */}
+      <TouchableWithoutFeedback onPress={toggleControls}>
+        <View style={[styles.container, { opacity, backgroundColor }]}>
         <Animated.View 
           style={[
             styles.header, 
@@ -252,7 +258,8 @@ function ImageViewing({
             })}
           </Animated.View>
         )}
-      </View>
+        </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 }
