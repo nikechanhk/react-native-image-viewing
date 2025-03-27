@@ -62,7 +62,6 @@ const ImageItem = ({
   // Try to get dimensions directly from the imageSrc if it's a URI source
   const sourceWidth = typeof imageSrc !== 'number' && 'width' in imageSrc ? imageSrc.width : undefined;
   const sourceHeight = typeof imageSrc !== 'number' && 'height' in imageSrc ? imageSrc.height : undefined;
-  console.log("Source dimensions:", { width: sourceWidth, height: sourceHeight });
   
   // Determine if image is landscape based on source dimensions, fallback to layout dimensions
   let isImageLandscape = false;
