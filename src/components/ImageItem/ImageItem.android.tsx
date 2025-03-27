@@ -169,14 +169,17 @@ const ImageItem = ({
     <View style={styles.container}>
       {/* 最外层透明点击层，用于捕获单击事件 */}
       <TouchableWithoutFeedback onPress={handleSingleTap}>
-        <View style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: layout.width,
-          height: layout.height,
-          zIndex: 10, // 确保在最上层但不影响其他手势
-        }} />
+        <View 
+          pointerEvents="box-only" 
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: layout.width,
+            height: layout.height,
+            zIndex: 1, // 设置较低的 zIndex 确保不影响其他手势
+            backgroundColor: 'transparent'
+          }} />
       </TouchableWithoutFeedback>
       
       <View style={styles.centerContainer}>
@@ -188,7 +191,7 @@ const ImageItem = ({
           showsHorizontalScrollIndicator={false}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.imageScrollContainer}
-          scrollEnabled={swipeToCloseEnabled}
+          scrollEnabled={true} // 始终启用滚动以确保可以上下滚动
           {...(swipeToCloseEnabled && {
             onScroll,
             onScrollEndDrag,
@@ -198,7 +201,8 @@ const ImageItem = ({
           {/* 恢复手势处理器以支持缩放 */}
           <Animated.View
             {...panHandlers}
-            style={imageStylesWithOpacity}
+            style={[imageStylesWithOpacity, { zIndex: 5 }]}
+            collapsable={false}
           >
             <ExpoImage
               source={imageSrc}
