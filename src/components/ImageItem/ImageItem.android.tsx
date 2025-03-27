@@ -98,8 +98,9 @@ const ImageItem = ({
   const lastTapPositionRef = useRef<{ x: number, y: number } | null>(null);
   
   // 處理單擊事件，與 iOS 版本保持一致
-  // 直接處理單擊事件，不經過 usePanResponder 中的邏輯
+  // 直接使用獨立處理機制，不依賴 usePanResponder
   const handleSingleTap = useCallback(() => {
+    console.log('SingleTap detected on Android');
     if (onSingleTap) {
       onSingleTap();
     }
@@ -166,6 +167,18 @@ const ImageItem = ({
 
   return (
     <View style={styles.container}>
+      {/* 最外层透明点击层，用于捕获单击事件 */}
+      <TouchableWithoutFeedback onPress={handleSingleTap}>
+        <View style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: layout.width,
+          height: layout.height,
+          zIndex: 10, // 确保在最上层但不影响其他手势
+        }} />
+      </TouchableWithoutFeedback>
+      
       <View style={styles.centerContainer}>
         <ScrollView
           ref={imageContainer}
@@ -181,34 +194,26 @@ const ImageItem = ({
             onScrollEndDrag,
           })}
         >
-      <View style={{ height: layout.height }} />
-      <Animated.View
-        style={imageStylesWithOpacity}
-      >
-        <ExpoImage
-          source={imageSrc}
-          style={{
-            width: layout.width,
-            height: layout.height,
-            alignSelf: 'center',
-          }}
-          contentFit="contain"
-          contentPosition="center"
-          onLoad={onLoaded}
-        />
-      </Animated.View>
-      {/* 透明覆蓋層用於捕捉點擊事件 */}
-      <TouchableWithoutFeedback onPress={handleSingleTap}>
-        <View style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: layout.width,
-          height: layout.height,
-        }} />
-      </TouchableWithoutFeedback>
-    </ScrollView>
-    </View>
+          <View style={{ height: layout.height }} />
+          {/* 恢复手势处理器以支持缩放 */}
+          <Animated.View
+            {...panHandlers}
+            style={imageStylesWithOpacity}
+          >
+            <ExpoImage
+              source={imageSrc}
+              style={{
+                width: layout.width,
+                height: layout.height,
+                alignSelf: 'center',
+              }}
+              contentFit="contain"
+              contentPosition="center"
+              onLoad={onLoaded}
+            />
+          </Animated.View>
+        </ScrollView>
+      </View>
     </View>
   );
 };
