@@ -6,167 +6,247 @@
  *
  */
 import React, { useCallback, useRef, useState, useEffect } from "react";
-import { View, Animated, ScrollView, StyleSheet, TouchableOpacity, } from "react-native";
-import usePanResponder from "../../hooks/usePanResponder";
+import { View, Animated, ScrollView, StyleSheet, TouchableWithoutFeedback, PanResponder, } from "react-native";
 import useImageDimensions from "../../hooks/useImageDimensions";
-import { getImageStyles, getImageTransform } from "../../utils";
+import { ImageLoading } from "./ImageLoading";
 import { Image as ExpoImage } from "expo-image";
 const SWIPE_CLOSE_OFFSET = 75;
 const SWIPE_CLOSE_VELOCITY = 1.75;
-// Props type is now imported from ImageItem.d.ts
+const DOUBLE_TAP_DELAY = 300; // ms
 const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPress, swipeToCloseEnabled = true, doubleTapToZoomEnabled = true, currentImageIndex, layout, onSingleTap, }) => {
-    const imageContainer = useRef(null);
+    // Refs
+    const scrollViewRef = useRef(null);
+    const doubleTapTimer = useRef(null);
+    const lastTapTimeRef = useRef(0);
+    // State
+    const [isLoaded, setIsLoaded] = useState(false);
+    const [scale, setScale] = useState(1);
+    const [translateX, setTranslateX] = useState(0);
+    const [translateY, setTranslateY] = useState(0);
+    const [isZoomed, setIsZoomed] = useState(false);
+    // Get image dimensions
     const imageDimensions = useImageDimensions(imageSrc) || { width: 0, height: 0 };
-    // Re-calculate transform when layout changes or image dimensions become available
-    // Ensure images fit screen width first, then adjust height based on aspect ratio
-    const adjustedDimensions = {
-        width: layout.width,
-        height: imageDimensions.width > 0 && imageDimensions.height > 0 ?
-            (layout.width * (imageDimensions.height / imageDimensions.width)) :
-            layout.height * 0.8
-    };
-    const [translate, scale] = getImageTransform(adjustedDimensions, { width: layout.width, height: layout.height });
+    // Calculate dimensions that maintain aspect ratio
+    const imageHeight = imageDimensions.width > 0 && imageDimensions.height > 0
+        ? (layout.width * (imageDimensions.height / imageDimensions.width))
+        : layout.height * 0.8;
+    // For swipe to close functionality
     const scrollValueY = new Animated.Value(0);
-    const [isLoaded, setLoadEnd] = useState(false);
-    // Force redraw when orientation changes
-    useEffect(() => {
-        if (onZoomPerformed) {
-            // Reset zoom state when orientation changes
-            onZoomPerformed(false);
-        }
-    }, [layout.width, layout.height]);
-    const onLoaded = useCallback(() => setLoadEnd(true), []);
-    const onZoomPerformed = useCallback((isZoomed) => {
-        onZoom(isZoomed);
-        if (imageContainer === null || imageContainer === void 0 ? void 0 : imageContainer.current) {
-            imageContainer.current.setNativeProps({
-                scrollEnabled: !isZoomed,
+    // Handle image load completion
+    const onImageLoaded = useCallback(() => {
+        console.log('[Android] Image loaded');
+        setIsLoaded(true);
+    }, []);
+    // Toggle zoom state
+    const toggleZoom = useCallback((zoomed) => {
+        console.log('[Android] Zoom changed to:', zoomed);
+        setIsZoomed(zoomed);
+        onZoom(zoomed);
+        // Update scroll enabled state
+        if (scrollViewRef.current) {
+            scrollViewRef.current.setNativeProps({
+                scrollEnabled: !zoomed
             });
         }
-    }, [imageContainer]);
+    }, [onZoom]);
+    // Reset on orientation change
     useEffect(() => {
-        if (imageContainer.current) {
-            // Reset position when layout changes (orientation change)
-            imageContainer.current.scrollTo({ y: layout.height, animated: false });
+        console.log('[Android] Layout changed, resetting zoom');
+        toggleZoom(false);
+        setScale(1);
+        setTranslateX(0);
+        setTranslateY(0);
+        if (scrollViewRef.current) {
+            scrollViewRef.current.scrollTo({ y: layout.height, animated: false });
         }
-    }, [imageContainer, layout.height, layout.width]);
-    const onLongPressHandler = useCallback(() => {
+    }, [layout.width, layout.height]);
+    // Handle long press
+    const handleLongPress = useCallback(() => {
         onLongPress(imageSrc);
     }, [imageSrc, onLongPress]);
-    // 跟踪點擊狀態，用於區分單擊和雙擊
-    const lastTapRef = useRef(0);
-    const lastTapPositionRef = useRef(null);
-    // 處理單擊事件，與 iOS 版本保持一致
-    // 直接使用獨立處理機制，不依賴 usePanResponder
-    const handleSingleTap = useCallback(() => {
-        console.log('SingleTap detected on Android');
-        if (onSingleTap) {
-            onSingleTap();
+    // Handle tap events (single & double)
+    const handleTap = useCallback((event) => {
+        const now = Date.now();
+        const DOUBLE_TAP_THRESHOLD = 300;
+        // Check if this is a double tap
+        if (now - lastTapTimeRef.current < DOUBLE_TAP_THRESHOLD) {
+            console.log('[Android] Double-tap detected');
+            // Toggle zoom
+            if (doubleTapToZoomEnabled) {
+                const newZoomState = !isZoomed;
+                toggleZoom(newZoomState);
+                if (newZoomState) {
+                    setScale(2); // Zoom in on double tap
+                }
+                else {
+                    setScale(1); // Reset zoom on second double tap
+                }
+            }
         }
-    }, [onSingleTap]);
-    const [panHandlers, scaleValue, translateValue] = usePanResponder({
-        initialScale: scale || 1,
-        initialTranslate: translate || { x: 0, y: 0 },
-        onZoom: onZoomPerformed,
-        doubleTapToZoomEnabled,
-        onLongPress: onLongPressHandler,
-        delayLongPress,
-        currentImageIndex,
-        layout,
-        onSingleTap: handleSingleTap,
-    });
-    const imagesStyles = getImageStyles(imageDimensions, translateValue, scaleValue);
-    const imageOpacity = scrollValueY.interpolate({
-        inputRange: [-SWIPE_CLOSE_OFFSET, 0, SWIPE_CLOSE_OFFSET],
-        outputRange: [0.7, 1, 0.7],
-    });
-    // 確保圖片有有效寬高，用作備份尺寸以防止原始尺寸為零
-    const fallbackWidth = layout.width;
-    const fallbackHeight = layout.height;
-    // 專門為 Android 調整圖片樣式，確保圖片始終可見
-    const imageStylesWithOpacity = {
-        ...imagesStyles,
-        opacity: 1,
-        // 確保圖片元素至少有最小尺寸
-        width: layout.width,
-    };
-    const onScrollEndDrag = ({ nativeEvent, }) => {
-        var _a, _b, _c, _d;
-        const velocityY = (_b = (_a = nativeEvent === null || nativeEvent === void 0 ? void 0 : nativeEvent.velocity) === null || _a === void 0 ? void 0 : _a.y) !== null && _b !== void 0 ? _b : 0;
-        const offsetY = (_d = (_c = nativeEvent === null || nativeEvent === void 0 ? void 0 : nativeEvent.contentOffset) === null || _c === void 0 ? void 0 : _c.y) !== null && _d !== void 0 ? _d : 0;
-        if ((Math.abs(velocityY) > SWIPE_CLOSE_VELOCITY &&
-            (offsetY > SWIPE_CLOSE_OFFSET + layout.height || offsetY < -SWIPE_CLOSE_OFFSET + layout.height))) {
+        else {
+            // This is a single tap (with delay to ensure it's not a double tap)
+            setTimeout(() => {
+                if (now - lastTapTimeRef.current >= DOUBLE_TAP_THRESHOLD) {
+                    console.log('[Android] Single-tap confirmed');
+                    if (onSingleTap) {
+                        onSingleTap();
+                    }
+                }
+            }, DOUBLE_TAP_THRESHOLD);
+        }
+        lastTapTimeRef.current = now;
+    }, [doubleTapToZoomEnabled, isZoomed, onSingleTap]);
+    // Handle scroll events for swipe-to-close
+    const onScroll = useCallback((event) => {
+        if (swipeToCloseEnabled) {
+            const offsetY = event.nativeEvent.contentOffset.y;
+            scrollValueY.setValue(offsetY);
+            // Check for swipe-to-close threshold
+            if (offsetY > layout.height + layout.height / 2 ||
+                offsetY < layout.height - layout.height / 2) {
+                onRequestClose();
+            }
+        }
+    }, [layout.height, swipeToCloseEnabled, onRequestClose, scrollValueY]);
+    // Handle scroll end for swipe-to-close
+    const onScrollEndDrag = useCallback((event) => {
+        var _a;
+        if (!swipeToCloseEnabled)
+            return;
+        const offsetY = event.nativeEvent.contentOffset.y;
+        const velocityY = Math.abs(((_a = event.nativeEvent.velocity) === null || _a === void 0 ? void 0 : _a.y) || 0);
+        if (velocityY > SWIPE_CLOSE_VELOCITY &&
+            (offsetY > layout.height + SWIPE_CLOSE_OFFSET ||
+                offsetY < layout.height - SWIPE_CLOSE_OFFSET)) {
             onRequestClose();
         }
-    };
-    const onScroll = ({ nativeEvent, }) => {
-        var _a, _b;
-        const offsetY = (_b = (_a = nativeEvent === null || nativeEvent === void 0 ? void 0 : nativeEvent.contentOffset) === null || _a === void 0 ? void 0 : _a.y) !== null && _b !== void 0 ? _b : 0;
-        scrollValueY.setValue(offsetY);
-        if (offsetY > layout.height + layout.height / 2 ||
-            offsetY < layout.height - layout.height / 2) {
-            onRequestClose();
+        else if (scrollViewRef.current) {
+            // Return to center position if not closing
+            scrollViewRef.current.scrollTo({ y: layout.height, animated: true });
         }
-    };
-    // 直接设置单击事件处理的耐心和简化版的handleSingleTap函数
-    // 其实未使用自定义PanResponder，而是直接使用TouchableOpacity
-    // 简化处理流程以优先确保单击显示/隐藏header和footer功能正常
+    }, [layout.height, swipeToCloseEnabled, onRequestClose]);
+    // Set up pan responder for pinch zoom
+    const panResponder = useRef(PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onStartShouldSetPanResponderCapture: () => false,
+        onMoveShouldSetPanResponder: (_, gestureState) => {
+            // Only capture for multi-touch or significant movement
+            return gestureState.numberActiveTouches === 2 ||
+                Math.abs(gestureState.dx) > 10 ||
+                Math.abs(gestureState.dy) > 10;
+        },
+        onMoveShouldSetPanResponderCapture: () => false,
+        onPanResponderGrant: () => {
+            // Start of gesture
+        },
+        onPanResponderMove: (event, gestureState) => {
+            // Handle pinch to zoom with two fingers
+            if (gestureState.numberActiveTouches === 2) {
+                const touches = event.nativeEvent.touches;
+                if (touches && touches.length >= 2) {
+                    // Calculate distance between touches
+                    const touch1 = touches[0];
+                    const touch2 = touches[1];
+                    if (touch1 && touch2) {
+                        const currentDistance = Math.sqrt(Math.pow(touch1.pageX - touch2.pageX, 2) +
+                            Math.pow(touch1.pageY - touch2.pageY, 2));
+                        // Update scale based on pinch distance
+                        if (gestureState.previousPinchDistance) {
+                            const scaleChange = currentDistance / gestureState.previousPinchDistance;
+                            const newScale = Math.min(Math.max(scale * scaleChange, 1), 3);
+                            setScale(newScale);
+                            // When zoomed, allow panning
+                            if (newScale > 1) {
+                                toggleZoom(true);
+                            }
+                            else {
+                                toggleZoom(false);
+                            }
+                        }
+                        // Save for next comparison
+                        gestureState.previousPinchDistance = currentDistance;
+                    }
+                }
+            }
+            // Handle panning when zoomed
+            else if (isZoomed && gestureState.numberActiveTouches === 1) {
+                setTranslateX(prev => prev + gestureState.dx / scale);
+                setTranslateY(prev => prev + gestureState.dy / scale);
+            }
+        },
+        onPanResponderRelease: () => {
+            // End of gesture
+            delete PanResponder.gestureState.previousPinchDistance;
+        }
+    })).current;
     return (<View style={styles.container}>
-      {/* 套层布局 */}
-      <View style={styles.centerContainer}>
-        {/* 这个覆盖层只处理点击 */}
-        <TouchableOpacity activeOpacity={1.0} onPress={handleSingleTap} style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            zIndex: 100, // 确保在最上层
-        }}>
-          <View style={{ width: '100%', height: '100%' }}/>
-        </TouchableOpacity>
-
-        <ScrollView ref={imageContainer} style={styles.listItem} pagingEnabled nestedScrollEnabled={false} // 禁用嵌套滚动确保手势正确处理
-     showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.imageScrollContainer} scrollEnabled={true} // 始终启用滚动
+      {/* Image in scrollview for swipe-to-close and vertical scrolling */}
+      <ScrollView ref={scrollViewRef} style={styles.scrollView} contentContainerStyle={styles.scrollViewContent} pagingEnabled nestedScrollEnabled={true} directionalLockEnabled={false} showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false} scrollEnabled={!isZoomed} // Disable scroll when zoomed to allow panning
      {...(swipeToCloseEnabled && {
         onScroll,
         onScrollEndDrag,
-    })}>
-          <View style={{ height: layout.height }}/>
-          <Animated.View style={{ width: layout.width, height: layout.height }}>
-            <ExpoImage source={imageSrc} style={{
+    })} scrollEventThrottle={16}>
+        {/* Top spacer for vertical scrolling */}
+        <View style={{ height: layout.height }}/>
+        
+        {/* Main content area */}
+        <View style={{
             width: layout.width,
-            height: layout.height,
-            alignSelf: 'center',
-        }} contentFit="contain" contentPosition="center" onLoad={onLoaded}/>
-          </Animated.View>
-        </ScrollView>
-      </View>
+            height: Math.max(imageHeight, layout.height),
+            justifyContent: 'center',
+            alignItems: 'center',
+        }} {...panResponder.panHandlers}>
+          {/* Tap handler layer */}
+          <TouchableWithoutFeedback onPress={handleTap} onLongPress={handleLongPress} delayLongPress={delayLongPress}>
+            <View style={styles.imageContainer}>
+              {/* Main image */}
+              <Animated.View style={{
+            width: layout.width,
+            height: imageHeight,
+            transform: [
+                { scale },
+                { translateX },
+                { translateY }
+            ]
+        }}>
+                <ExpoImage source={imageSrc} style={styles.image} contentFit="contain" contentPosition="center" onLoad={onImageLoaded}/>
+              </Animated.View>
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+        
+        {/* Bottom spacer for vertical scrolling */}
+        <View style={{ height: layout.height }}/>
+      </ScrollView>
+      
+      {/* Loading indicator */}
+      {!isLoaded && <ImageLoading />}
     </View>);
 };
 const styles = StyleSheet.create({
     container: {
-        width: "100%",
-        height: "100%",
-        justifyContent: 'center',
-        alignItems: 'center',
         flex: 1,
+        overflow: "hidden",
     },
-    centerContainer: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    listItem: {
+    scrollView: {
         width: "100%",
         height: "100%",
     },
-    imageScrollContainer: {
+    scrollViewContent: {
+        // 300% height to allow content above and below for swipe to close
         height: "300%",
+    },
+    imageContainer: {
+        flex: 1,
+        width: "100%",
+        height: "100%",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    image: {
+        flex: 1,
+        width: "100%",
+        height: "100%",
     },
 });
 export default React.memo(ImageItem);
