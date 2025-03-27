@@ -136,14 +136,21 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
             // PANNING with one finger when zoomed
             else if (isZoomed && gestureState.numberActiveTouches === 1) {
                 // Use more sensitive handling for panning (divide by a factor)
+                // Important: We're not changing the scale here, just the position
                 setTranslateX(prev => prev + gestureState.dx / 10);
                 setTranslateY(prev => prev + gestureState.dy / 10);
             }
         },
         // End of gesture
-        onPanResponderRelease: () => {
-            // Reset pinch state
-            pinchStateRef.current = {};
+        onPanResponderRelease: (evt, gestureState) => {
+            // Only reset pinch state when ending a pinch gesture
+            // Keep the state for single finger operations
+            if (gestureState.numberActiveTouches === 0) {
+                // Save the final scale value but clear the distance tracking
+                pinchStateRef.current = {
+                    initialScale: scale
+                };
+            }
         }
     })).current;
     return (<View style={styles.container}>
