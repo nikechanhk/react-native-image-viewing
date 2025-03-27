@@ -6,11 +6,10 @@
  *
  */
 import React, { useCallback, useRef, useState, useEffect } from "react";
-import { View, Animated, ScrollView, StyleSheet, } from "react-native";
+import { View, Animated, ScrollView, StyleSheet, TouchableWithoutFeedback, } from "react-native";
 import usePanResponder from "../../hooks/usePanResponder";
 import useImageDimensions from "../../hooks/useImageDimensions";
 import { getImageStyles, getImageTransform } from "../../utils";
-import { ImageLoading } from "./ImageLoading";
 import { Image as ExpoImage } from "expo-image";
 const SWIPE_CLOSE_OFFSET = 75;
 const SWIPE_CLOSE_VELOCITY = 1.75;
@@ -58,6 +57,7 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
     const lastTapRef = useRef(0);
     const lastTapPositionRef = useRef(null);
     // 處理單擊事件，與 iOS 版本保持一致
+    // 直接處理單擊事件，不經過 usePanResponder 中的邏輯
     const handleSingleTap = useCallback(() => {
         if (onSingleTap) {
             onSingleTap();
@@ -114,25 +114,23 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
         onScrollEndDrag,
     })}>
       <View style={{ height: layout.height }}/>
-      <Animated.View {...panHandlers} style={imageStylesWithOpacity}>
-        <View style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: -1,
-        }}>
-            {(isLoaded || imageDimensions) && <ImageLoading />}
-        </View>
+      <Animated.View style={imageStylesWithOpacity}>
         <ExpoImage source={imageSrc} style={{
             width: layout.width,
             height: layout.height,
             alignSelf: 'center',
         }} contentFit="contain" contentPosition="center" onLoad={onLoaded}/>
       </Animated.View>
+      {/* 透明覆蓋層用於捕捉點擊事件 */}
+      <TouchableWithoutFeedback onPress={handleSingleTap}>
+        <View style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: layout.width,
+            height: layout.height,
+        }}/>
+      </TouchableWithoutFeedback>
     </ScrollView>
     </View>
     </View>);

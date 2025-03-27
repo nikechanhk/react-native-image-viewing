@@ -17,6 +17,7 @@ import {
   NativeSyntheticEvent,
   NativeMethodsMixin,
   ScaledSize,
+  TouchableWithoutFeedback,
 } from "react-native";
 
 import usePanResponder from "../../hooks/usePanResponder";
@@ -97,6 +98,7 @@ const ImageItem = ({
   const lastTapPositionRef = useRef<{ x: number, y: number } | null>(null);
   
   // 處理單擊事件，與 iOS 版本保持一致
+  // 直接處理單擊事件，不經過 usePanResponder 中的邏輯
   const handleSingleTap = useCallback(() => {
     if (onSingleTap) {
       onSingleTap();
@@ -181,21 +183,8 @@ const ImageItem = ({
         >
       <View style={{ height: layout.height }} />
       <Animated.View
-        {...panHandlers}
         style={imageStylesWithOpacity}
       >
-        <View style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: -1,
-        }}>
-            {(isLoaded || imageDimensions) && <ImageLoading />}
-        </View>
         <ExpoImage
           source={imageSrc}
           style={{
@@ -208,6 +197,16 @@ const ImageItem = ({
           onLoad={onLoaded}
         />
       </Animated.View>
+      {/* 透明覆蓋層用於捕捉點擊事件 */}
+      <TouchableWithoutFeedback onPress={handleSingleTap}>
+        <View style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: layout.width,
+          height: layout.height,
+        }} />
+      </TouchableWithoutFeedback>
     </ScrollView>
     </View>
     </View>
