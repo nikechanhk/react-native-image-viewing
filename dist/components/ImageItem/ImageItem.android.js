@@ -88,69 +88,83 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
             });
         }
     }, [layout.height, swipeToCloseEnabled, onRequestClose]);
-    // Set up pan responder for pinch zoom - simplified for reliability
+    // State for tracking last positions
+    const lastPositionRef = useRef({ x: 0, y: 0 });
+    // Set up pan responder for touch handling
     const panResponder = useRef(PanResponder.create({
-        // Only start handling on touch
-        onStartShouldSetPanResponder: (evt) => {
-            return evt.nativeEvent.touches.length === 2; // Only for pinch gesture
-        },
-        onStartShouldSetPanResponderCapture: () => false,
-        // Take over when we have a two-finger gesture or single finger in zoomed state
+        // Always attempt to become responder on touch start
+        onStartShouldSetPanResponder: () => true,
+        // Take over for multi-touch or when zoomed
         onMoveShouldSetPanResponder: (evt, gestureState) => {
+            // Allow for pinch zooming (2 fingers) or panning when zoomed (1 finger)
             return gestureState.numberActiveTouches === 2 ||
                 (isZoomed && gestureState.numberActiveTouches === 1);
         },
-        onMoveShouldSetPanResponderCapture: () => false,
         // Initialize gesture state
-        onPanResponderGrant: (evt) => {
-            // Store current scale when starting gesture
-            pinchStateRef.current.initialScale = scale;
-            pinchStateRef.current.initialDistance = undefined;
+        onPanResponderGrant: (evt, gestureState) => {
+            // Store current position and scale at start of gesture
+            lastPositionRef.current = {
+                x: translateX,
+                y: translateY
+            };
+            // For pinch gesture
+            if (gestureState.numberActiveTouches === 2) {
+                pinchStateRef.current = {
+                    initialScale: scale,
+                    initialDistance: undefined // Will be set on first move
+                };
+            }
         },
-        // Handle pinch and pan gestures
+        // Handle gestures
         onPanResponderMove: (evt, gestureState) => {
-            // PINCH TO ZOOM with two fingers
+            // PINCH TO ZOOM - two fingers
             if (gestureState.numberActiveTouches === 2) {
                 const touches = evt.nativeEvent.touches;
                 if (touches && touches.length >= 2) {
                     const touch1 = touches[0];
                     const touch2 = touches[1];
-                    // Calculate distance between touches
+                    // Calculate distance between touch points
                     const currentDistance = Math.sqrt(Math.pow(touch1.pageX - touch2.pageX, 2) +
                         Math.pow(touch1.pageY - touch2.pageY, 2));
-                    // Set initial distance if not set
+                    // Set initial distance on first move
                     if (!pinchStateRef.current.initialDistance) {
                         pinchStateRef.current.initialDistance = currentDistance;
                         return;
                     }
-                    // Calculate scale change
+                    // Calculate new scale
                     const initialDistance = pinchStateRef.current.initialDistance;
                     const initialScale = pinchStateRef.current.initialScale || 1;
-                    // Apply scale with limits
+                    // Apply scale with constraints
                     const newScale = Math.min(Math.max(initialScale * (currentDistance / initialDistance), MIN_SCALE), MAX_SCALE);
+                    // Update scale
                     setScale(newScale);
                     // Update zoom state
-                    toggleZoom(newScale > 1);
+                    if (newScale > 1) {
+                        toggleZoom(true);
+                    }
+                    else {
+                        toggleZoom(false);
+                        // Reset position when zooming out completely
+                        if (newScale === 1) {
+                            setTranslateX(0);
+                            setTranslateY(0);
+                        }
+                    }
                 }
             }
-            // PANNING with one finger when zoomed
+            // PAN - single finger when zoomed
             else if (isZoomed && gestureState.numberActiveTouches === 1) {
-                // Use more sensitive handling for panning (divide by a factor)
-                // Important: We're not changing the scale here, just the position
-                setTranslateX(prev => prev + gestureState.dx / 10);
-                setTranslateY(prev => prev + gestureState.dy / 10);
+                // Calculate new position
+                const newTranslateX = lastPositionRef.current.x + gestureState.dx / scale;
+                const newTranslateY = lastPositionRef.current.y + gestureState.dy / scale;
+                // Apply translation
+                setTranslateX(newTranslateX);
+                setTranslateY(newTranslateY);
             }
         },
         // End of gesture
-        onPanResponderRelease: (evt, gestureState) => {
-            // Only reset pinch state when ending a pinch gesture
-            // Keep the state for single finger operations
-            if (gestureState.numberActiveTouches === 0) {
-                // Save the final scale value but clear the distance tracking
-                pinchStateRef.current = {
-                    initialScale: scale
-                };
-            }
+        onPanResponderRelease: () => {
+            // Simply preserve the current state - no reset needed
         }
     })).current;
     return (<View style={styles.container}>
