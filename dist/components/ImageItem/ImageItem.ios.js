@@ -9,7 +9,6 @@ import React, { useCallback, useRef, useState, useEffect } from "react";
 import { ScrollView, StyleSheet, View, TouchableWithoutFeedback, } from "react-native";
 import useDoubleTapToZoom from "../../hooks/useDoubleTapToZoom";
 import useImageDimensions from "../../hooks/useImageDimensions";
-import { ImageLoading } from "./ImageLoading";
 import { Image as ExpoImage } from "expo-image";
 const SWIPE_CLOSE_OFFSET = 75;
 const SWIPE_CLOSE_VELOCITY = 1.55;
@@ -107,7 +106,7 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
         }
     }, [doubleTapToZoomEnabled, doubleTapZoom, onSingleTap]);
     return (<View style={styles.container}>
-      {(!loaded || !imageDimensions) && <ImageLoading />}
+      {/* {(!loaded || !imageDimensions) && <ImageLoading />} */}
       
       <View style={styles.imageWrapper}>
         <ScrollView ref={scrollViewRef} contentContainerStyle={{

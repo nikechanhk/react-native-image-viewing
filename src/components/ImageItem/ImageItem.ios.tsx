@@ -166,7 +166,7 @@ const ImageItem = ({
 
   return (
     <View style={styles.container}>
-      {(!loaded || !imageDimensions) && <ImageLoading />}
+      {/* {(!loaded || !imageDimensions) && <ImageLoading />} */}
       
       <View style={styles.imageWrapper}>
         <ScrollView
