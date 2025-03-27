@@ -21,26 +21,20 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
     const scaleValue = useRef(new Animated.Value(1)).current;
     const translateXValue = useRef(new Animated.Value(0)).current;
     const translateYValue = useRef(new Animated.Value(0)).current;
-    // Track the current values without accessing _value directly
+    // Use direct refs to track values without addListener which can cause flickering
     const currentScale = useRef(1);
     const currentTranslateX = useRef(0);
     const currentTranslateY = useRef(0);
-    // Update tracked values when animation values change
-    useEffect(() => {
-        const scaleListener = scaleValue.addListener(({ value }) => {
-            currentScale.current = value;
-        });
-        const translateXListener = translateXValue.addListener(({ value }) => {
-            currentTranslateX.current = value;
-        });
-        const translateYListener = translateYValue.addListener(({ value }) => {
-            currentTranslateY.current = value;
-        });
-        return () => {
-            scaleValue.removeListener(scaleListener);
-            translateXValue.removeListener(translateXListener);
-            translateYValue.removeListener(translateYListener);
-        };
+    // Helper function to update values in a synchronized way
+    const updateTransformValues = useCallback((scale, translateX, translateY) => {
+        // Update our refs first
+        currentScale.current = scale;
+        currentTranslateX.current = translateX;
+        currentTranslateY.current = translateY;
+        // Then update the animated values
+        scaleValue.setValue(scale);
+        translateXValue.setValue(translateX);
+        translateYValue.setValue(translateY);
     }, [scaleValue, translateXValue, translateYValue]);
     // State
     const [isLoaded, setIsLoaded] = useState(false);
@@ -174,17 +168,25 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
                 let newScale = gestureStateRef.current.lastScale * (currentTouchDistance / initialTouchDistance);
                 // Apply scale limits
                 newScale = Math.min(Math.max(newScale, MIN_SCALE), MAX_SCALE);
-                // Update scale
-                scaleValue.setValue(newScale);
                 // Calculate current touch center point
                 const currentTouchX = (touch1.pageX + touch2.pageX) / 2;
                 const currentTouchY = (touch1.pageY + touch2.pageY) / 2;
                 // Calculate translation changes including scaling effect
                 const dx = (currentTouchX - gestureStateRef.current.initialTouchX) / gestureStateRef.current.lastScale;
                 const dy = (currentTouchY - gestureStateRef.current.initialTouchY) / gestureStateRef.current.lastScale;
-                // Apply translation
-                translateXValue.setValue(gestureStateRef.current.lastTranslateX + dx);
-                translateYValue.setValue(gestureStateRef.current.lastTranslateY + dy);
+                // Calculate new translation values
+                const newTranslateX = gestureStateRef.current.lastTranslateX + dx;
+                const newTranslateY = gestureStateRef.current.lastTranslateY + dy;
+                // Update our refs first to avoid locking issues
+                currentScale.current = newScale;
+                currentTranslateX.current = newTranslateX;
+                currentTranslateY.current = newTranslateY;
+                // Batch all Animated.Value updates to reduce flickering
+                requestAnimationFrame(() => {
+                    scaleValue.setValue(newScale);
+                    translateXValue.setValue(newTranslateX);
+                    translateYValue.setValue(newTranslateY);
+                });
                 // Update zoom state based on scale
                 toggleZoom(newScale > 1.01); // Use a small threshold
             }
@@ -193,9 +195,17 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
                 // Calculate new position values
                 const dx = gestureState.dx / gestureStateRef.current.lastScale;
                 const dy = gestureState.dy / gestureStateRef.current.lastScale;
-                // Apply translation with scaling factor
-                translateXValue.setValue(gestureStateRef.current.lastTranslateX + dx);
-                translateYValue.setValue(gestureStateRef.current.lastTranslateY + dy);
+                // Calculate new translation values
+                const newTranslateX = gestureStateRef.current.lastTranslateX + dx;
+                const newTranslateY = gestureStateRef.current.lastTranslateY + dy;
+                // Update our refs first to avoid locking issues
+                currentTranslateX.current = newTranslateX;
+                currentTranslateY.current = newTranslateY;
+                // Batch updates to reduce flickering
+                requestAnimationFrame(() => {
+                    translateXValue.setValue(newTranslateX);
+                    translateYValue.setValue(newTranslateY);
+                });
             }
         },
         // When touch ends
@@ -206,9 +216,16 @@ const ImageItem = ({ imageSrc, onZoom, onRequestClose, onLongPress, delayLongPre
             gestureStateRef.current.lastTranslateY = currentTranslateY.current;
             // If scale is close to 1, snap back to exactly 1 and reset position
             if (gestureStateRef.current.lastScale < 1.05) {
-                scaleValue.setValue(1);
-                translateXValue.setValue(0);
-                translateYValue.setValue(0);
+                // Update our refs first
+                currentScale.current = 1;
+                currentTranslateX.current = 0;
+                currentTranslateY.current = 0;
+                // Batch updates to reduce flickering
+                requestAnimationFrame(() => {
+                    scaleValue.setValue(1);
+                    translateXValue.setValue(0);
+                    translateYValue.setValue(0);
+                });
                 // Update gesture state
                 gestureStateRef.current.lastScale = 1;
                 gestureStateRef.current.lastTranslateX = 0;
