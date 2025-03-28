@@ -178,6 +178,7 @@ const ImageItem = ({
             alignItems: 'center',
           }}
           style={styles.scrollView}
+          scrollsToTop={false}
           pinchGestureEnabled
           maximumZoomScale={maxScale}
           showsHorizontalScrollIndicator={false}
