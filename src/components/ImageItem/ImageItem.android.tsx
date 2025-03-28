@@ -165,6 +165,7 @@ const ImageItem = ({
     <ScrollView
       ref={imageContainer}
       style={styles.listItem}
+      scrollsToTop={false}
       pagingEnabled
       nestedScrollEnabled
       showsHorizontalScrollIndicator={false}
